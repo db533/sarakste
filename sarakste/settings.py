@@ -51,9 +51,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0fe6tyuu9ztxq(gmo!d6c#86$o_91hfj799nu6cgwy0*gqlnl2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', cast=[str])
 
 
 # Application definition
@@ -153,7 +153,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# Define the directory where static files will be collected during deployment
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Adjust the path as needed
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'trading_app', 'static'),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
