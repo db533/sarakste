@@ -34,6 +34,11 @@ else:
     db_user = env.str('MYSQL_LOCAL_DB_USER')
     db_pwd = env.str('MYSQL_LOCAL_PWD')
 
+print('host_ip:',host_ip)
+print('db_name:',db_name)
+print('db_user:',db_user)
+print('db_pwd:',db_pwd)
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
