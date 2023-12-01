@@ -158,7 +158,7 @@ STATIC_URL = '/static/'
 # Define the directory where static files will be collected during deployment
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Adjust the path as needed
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'trading_app', 'static'),
+    os.path.join(BASE_DIR, 'sarakste_app', 'static'),
 ]
 
 # Default primary key field type
