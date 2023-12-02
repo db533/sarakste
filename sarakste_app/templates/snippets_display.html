@@ -10,20 +10,20 @@
             <th>Fragments 2</th>
         </tr>
         <tr>
-            <td><img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;"></td>
-            <td><img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;"></td>
+            <td><img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 75%;"></td>
+            <td><img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 75%;"></td>
         </tr>
         <tr>
             <td>{{ snippet1.filename }}</td>
             <td>{{ snippet2.filename }}</td>
         </tr>
         <tr>
-            <td>Mīlēts? {{ user_snippet1.loved }}</td>
-            <td>Mīlēts{{ user_snippet2.loved }}</td>
+            <td>Mīlēts? {% if user_snippet1.loved %}❤️{% endif %}</td>
+            <td>Mīlēts? {% if user_snippet2.loved %}❤️{% endif %}</td>
         </tr>
         <tr>
-            <td>Atzīmēts? {{ user_snippet1.marked }}</td>
-            <td>Atzīmēts? {{ user_snippet2.marked }}</td>
+            <td>Atzīmēts? {% if user_snippet1.marked %}✓️{% endif %}</td>
+            <td>Atzīmēts? {% if user_snippet2.marked %}✓️{% endif %}</td>
         </tr>
 
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
