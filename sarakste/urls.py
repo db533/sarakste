@@ -27,10 +27,12 @@ from django.views.generic import RedirectView
 
 urlpatterns += [
     path('', RedirectView.as_view(url='sarakste/', permanent=True)),
-    path('login/', login_view, name='login_view'),
+    path('login', login_view, name='login_view'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),  # Add logout view
     path('lasit/', display_snippets, name='display_snippets'),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
+
 # Use static() to add URL mapping to serve static files during development (only)
 from django.conf import settings
 from django.conf.urls.static import static
