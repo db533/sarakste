@@ -67,7 +67,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sarakste_app.apps.SaraksteAppConfig',
-    'django.contrib.staticfiles',
 
 ]
 
