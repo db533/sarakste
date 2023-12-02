@@ -22,6 +22,7 @@ class Snippet(models.Model):
     text = models.TextField(help_text='The written text in the image of the snippet.')
     summary = models.ForeignKey(Summary, on_delete=models.SET_NULL, null=True)  # Corrected ForeignKey
     users = models.ManyToManyField(User, through='UserSnippet')
+    overlaprowcount = models.IntegerField(null=True, blank=True, default=0, help_text='The number of rows from this image that overlap on the next image in the segment.')
 
 class UserSnippet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

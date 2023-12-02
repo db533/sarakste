@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from sarakste_app.views import display_snippets
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +26,7 @@ from django.views.generic import RedirectView
 
 urlpatterns += [
     path('', RedirectView.as_view(url='sarakste/', permanent=True)),
+    path('lasit/', display_snippets, name='display_snippets'),
 ]
 # Use static() to add URL mapping to serve static files during development (only)
 from django.conf import settings
