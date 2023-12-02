@@ -18,6 +18,14 @@
             <td>{{ snippet2.filename }}</td>
         </tr>
         <tr>
+            <td><textarea name="text1">{{ snippet1.text }}</textarea></td>
+            <td><textarea name="text2">{{ snippet2.text }}</textarea></td>
+        </tr>
+        <tr>
+            <td><textarea name="summary1">{{ snippet1.summary }}</textarea></td>
+            <td><textarea name="summary2">{{ snippet2.summary }}</textarea></td>
+        </tr>
+        <tr>
             <td>Mīlēts? {% if user_snippet1.loved %}❤️{% endif %}</td>
             <td>Mīlēts? {% if user_snippet2.loved %}❤️{% endif %}</td>
         </tr>
