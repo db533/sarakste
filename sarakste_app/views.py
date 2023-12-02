@@ -3,6 +3,17 @@ from .models import Snippet, UserSnippet
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
 
+def login_view(request):
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'})
+
+
 @login_required
 def display_snippets(request):
     # Default values
