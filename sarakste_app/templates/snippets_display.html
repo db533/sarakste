@@ -6,8 +6,8 @@
     {% csrf_token %}
     <table>
         <tr>
-            <th>Snippet 1</th>
-            <th>Snippet 2</th>
+            <th>Fragments 1</th>
+            <th>Fragments 2</th>
         </tr>
         <tr>
             <td><img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;"></td>
@@ -17,8 +17,17 @@
             <td>{{ snippet1.filename }}</td>
             <td>{{ snippet2.filename }}</td>
         </tr>
+        <tr>
+            <td>Mīlēts? {{ user_snippet1.loved }}</td>
+            <td>Mīlēts{{ user_snippet2.loved }}</td>
+        </tr>
+        <tr>
+            <td>Atzīmēts? {{ user_snippet1.marked }}</td>
+            <td>Atzīmēts? {{ user_snippet2.marked }}</td>
+        </tr>
+
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
     </table>
-    <button type="submit">Save Changes</button>
+    <button type="submit">Saglabāt izmaiņas</button>
 </form>
 {% endblock %}
