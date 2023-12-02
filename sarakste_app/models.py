@@ -17,9 +17,9 @@ class Summary(models.Model):
 class Snippet(models.Model):
     place = models.IntegerField(null=True, blank=True, default=1, help_text='The position in the sequence.')
     segment = models.ForeignKey(Segment, on_delete=models.SET_NULL, null=True)  # Corrected ForeignKey
-    target_url = models.CharField(max_length=255, help_text='The url to the image for the snippet.')
+    target_url = models.CharField(max_length=255, help_text='The url to the image for the snippet.', null=True)
     filename = models.CharField(max_length=30, help_text='The filename of the image for the snippet.')
-    text = models.TextField(help_text='The written text in the image of the snippet.')
+    text = models.TextField(help_text='The written text in the image of the snippet.', null=True)
     summary = models.ForeignKey(Summary, on_delete=models.SET_NULL, null=True)  # Corrected ForeignKey
     users = models.ManyToManyField(User, through='UserSnippet')
     overlaprowcount = models.IntegerField(null=True, blank=True, default=0, help_text='The number of rows from this image that overlap on the next image in the segment.')
