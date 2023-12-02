@@ -27,7 +27,7 @@ from django.views.generic import RedirectView
 
 urlpatterns += [
     path('', RedirectView.as_view(url='sarakste/', permanent=True)),
-    path('login', login_view, name='login_view'),
+    path('login/', login_view, name='login_view'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),  # Add logout view
     path('lasit/', display_snippets, name='display_snippets'),
 ]
