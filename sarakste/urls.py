@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from sarakste_app.views import display_snippets
+from sarakste_app.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
