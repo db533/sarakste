@@ -26,12 +26,26 @@
             <td><textarea name="summary2">{{ snippet2.summary }}</textarea></td>
         </tr>
         <tr>
-            <td>Mīlēts? {% if user_snippet1.loved %}❤️{% endif %}</td>
-            <td>Mīlēts? {% if user_snippet2.loved %}❤️{% endif %}</td>
+            <!-- Checkboxes for loved field -->
+            <td>
+                Mīlēts?
+                <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
+            </td>
+            <td>
+                Mīlēts?
+                <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
+            </td>
         </tr>
         <tr>
-            <td>Atzīmēts? {% if user_snippet1.marked %}✓️{% endif %}</td>
-            <td>Atzīmēts? {% if user_snippet2.marked %}✓️{% endif %}</td>
+            <!-- Checkboxes for marked field -->
+            <td>
+                Atzīmēts?
+                <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
+            </td>
+            <td>
+                Atzīmēts?
+                <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
+            </td>
         </tr>
 
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
