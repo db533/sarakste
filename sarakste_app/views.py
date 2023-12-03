@@ -14,7 +14,6 @@ def login_view(request):
         return JsonResponse({'success': False, 'error': 'Invalid credentials'})
 
 
-@login_required
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
