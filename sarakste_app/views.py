@@ -34,9 +34,21 @@ def display_snippets(request):
         snippet1.text = request.POST.get('text1', '')
         snippet2.text = request.POST.get('text2', '')
 
-        snippet1.summary = request.POST.get('summary1', '')
-        snippet2.summary = request.POST.get('summary2', '')
+        # Handle summary fields
+        summary1_text = request.POST.get('summary1', '').strip()
+        summary2_text = request.POST.get('summary2', '').strip()
 
+        if summary1_text:
+            summary1, _ = Summary.objects.get_or_create(title=summary1_text)
+            snippet1.summary = summary1
+        else:
+            snippet1.summary = None
+
+        if summary2_text:
+            summary2, _ = Summary.objects.get_or_create(title=summary2_text)
+            snippet2.summary = summary2
+        else:
+            snippet2.summary = None
         user_snippet1.loved = 'loved1' in request.POST
         user_snippet2.loved = 'loved2' in request.POST
 
