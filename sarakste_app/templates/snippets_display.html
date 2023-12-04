@@ -68,13 +68,12 @@
 
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
     </table>
-    {% if not frag1 == 1 and not place1 == 1 %}
+    {% if frag1 == 1 and place1 == 1 %}
+    {% else %}
         <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
     {% endif %}
     <button type="submit">Saglabāt izmaiņas</button>
     max_segment: {{max_segment}} max_place: {{max_place}}
-    {% if not frag2 == max_segment %}not frag2 == max_segment{% else %}frag2 == max_segment{% endif %}
-    {% if not place2 == max_place %}not place2 == max_place{% else %}place2 == max_place{% endif %}
     {% if not place2 == max_place or place2 == max_place and not frag2 == max_segment%}
         <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
     {% endif %}
