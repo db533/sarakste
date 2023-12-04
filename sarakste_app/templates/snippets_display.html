@@ -10,21 +10,17 @@
             <th>Fragments 2</th>
         </tr>
         <tr>
-            <td>{% if snippet1 %}<img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;">{% endif %}</td>
-            <td>{% if snippet2 %}<img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;">{% endif %}</td>
-        </tr>
-        <tr>
             <td>
+                {% if edit_mode %}<strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>{% endif %}
                 {% if snippet1 %}
-                    {% if edit_mode %}<strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>{% endif %}
                     <img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;">
                 {% else %}
                     Šāds fragments neeksistē.
                 {% endif %}
             </td>
             <td>
+                {% if edit_mode %}<strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>{% endif %}
                 {% if snippet2 %}
-                    {% if edit_mode %}<strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>{% endif %}
                     <img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;">
                 {% else %}
                     Šāds fragments neeksistē.
