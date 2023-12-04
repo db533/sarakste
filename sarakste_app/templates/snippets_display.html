@@ -14,7 +14,7 @@
             <td><img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;"></td>
         </tr>
         <tr>
-            <td><strong>{% if edit_mode %}<strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>{% endif %}{{ snippet1.filename }}</td>
+            <td>{% if edit_mode %}<strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>{% endif %}{{ snippet1.filename }}</td>
             <td>{% if edit_mode %}<strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>{% endif %}{{ snippet2.filename }}</td>
         </tr>
         {% if edit_mode %}<tr>
