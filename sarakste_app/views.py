@@ -66,7 +66,7 @@ def display_snippets(request):
         # Redirect to the same page to display updated content
         return redirect('display_snippets')
 
-    prev_snippet = Snippet.objects.filter(segment_id=segment_id, place=F('place') - 1).first()
+    prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
     if place1 > 1:
         prev_snippet_exists = True
     else:
