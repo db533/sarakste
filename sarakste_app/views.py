@@ -41,14 +41,9 @@ def display_snippets(request):
         user_snippet2 = None
 
     if request.method == 'POST':
-        snippet1.text = request.POST.get('text1', '')
-        snippet2.text = request.POST.get('text2', '')
-
-        # Handle summary fields
-        summary1_text = request.POST.get('summary1', '').strip()
-        summary2_text = request.POST.get('summary2', '').strip()
-
         if snippet1 is not None:
+            snippet1.text = request.POST.get('text1', '')
+            summary1_text = request.POST.get('summary1', '').strip()
             if summary1_text:
                 summary1, _ = Summary.objects.get_or_create(title=summary1_text)
                 snippet1.summary = summary1
@@ -57,6 +52,8 @@ def display_snippets(request):
             snippet1.save()
 
         if snippet2 is not None:
+            snippet2.text = request.POST.get('text2', '')
+            summary2_text = request.POST.get('summary2', '').strip()
             if summary2_text:
                 summary2, _ = Summary.objects.get_or_create(title=summary2_text)
                 snippet2.summary = summary2
