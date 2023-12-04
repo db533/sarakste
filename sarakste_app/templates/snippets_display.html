@@ -75,7 +75,7 @@
     max_segment: {{max_segment}} max_place: {{max_place}}
     {% if not frag2 == max_segment %}not frag2 == max_segment{% else %}frag2 == max_segment{% endif %}
     {% if not place2 == max_place %}not place2 == max_place{% else %}place2 == max_place{% endif %}
-    {% if not frag2 == max_segment and not place2 == max_place %}
+    {% if not place2 == max_place or place2 == max_place and not frag2 == max_segment%}
         <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
     {% endif %}
 </form>
