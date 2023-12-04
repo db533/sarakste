@@ -87,7 +87,7 @@ def display_snippets(request):
         'user_snippet2': user_snippet2,
         'prev_snippet': prev_snippet,
         'edit_mode': edit_mode,  # Add edit mode to context
-        'prev_snippet_exists' : prev_snippet_exists
+        'prev_snippet_exists' : prev_snippet_exists,
         'frag1' : frag1,
         'place1' : place1
         'frag2' : frag2,
