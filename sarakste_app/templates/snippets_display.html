@@ -72,6 +72,7 @@
         <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit=False">Iepriekšējā</a>
     {% endif %}
     <button type="submit">Saglabāt izmaiņas</button>
+    max_segment: {{max_segment}} max_place: {{max_place}}
     {% if not frag1 == max_segment and not place1 == max_place %}
         <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit=False">Nākamā</a>
     {% endif %}
