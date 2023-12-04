@@ -88,14 +88,14 @@ def display_snippets(request):
     # Previous button logic
     prev_frag1, prev_place1 = frag1, int(place1) - 1
     if prev_place1 < 1:
-        prev_frag1 -= 1
+        prev_frag1 = int(frag1)-1
         prev_place1 = Snippet.objects.filter(segment_id=prev_frag1).aggregate(Max('place'))['place__max'] or 1
         if prev_frag1 < 1:
             prev_frag1 = 1
 
     prev_frag2, prev_place2 = frag2, int(place2) - 1
     if prev_place2 < 1:
-        prev_frag2 -= 1
+        prev_frag2 = int(frag2)-1
         prev_place2 = Snippet.objects.filter(segment_id=prev_frag2).aggregate(Max('place'))['place__max'] or 1
         if prev_frag2 < 1:
             prev_frag2 = 1
@@ -103,13 +103,13 @@ def display_snippets(request):
     # Next button logic
     next_frag1, next_place1 = frag1, int(place1) + 1
     if next_place1 > max_place:
-            next_frag1 += 1
+            next_frag1 = int(frag1)+1
             next_place1 = 1
 
 
     next_frag2, next_place2 = frag2, int(place2) + 1
     if next_place2 > max_place:
-        next_frag2 += 1
+        next_frag2 =int(frag2)+1
         next_place2 = 1
 
     context = {
