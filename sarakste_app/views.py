@@ -26,11 +26,19 @@ def display_snippets(request):
     place2 = request.GET.get('place2', 2)
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
-    snippet1 = get_object_or_404(Snippet, segment_id=frag1, place=place1)
-    snippet2 = get_object_or_404(Snippet, segment_id=frag2, place=place2)
+    try:
+        snippet1 = Snippet.objects.get(segment_id=frag1, place=place1)
+        user_snippet1, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet1)
+    except Snippet.DoesNotExist:
+        snippet1 = None
+        user_snippet1 = None
 
-    user_snippet1, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet1)
-    user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
+    try:
+        snippet2 = Snippet.objects.get(segment_id=frag2, place=place2)
+        user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
+    except Snippet.DoesNotExist:
+        snippet2 = None
+        user_snippet2 = None
 
     if request.method == 'POST':
         snippet1.text = request.POST.get('text1', '')
