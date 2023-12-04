@@ -11,7 +11,6 @@
         </tr>
         <tr>
             <td>
-                {% if edit_mode %}<strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>{% endif %}
                 {% if snippet1 %}
                     <img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;">
                 {% else %}
@@ -19,7 +18,6 @@
                 {% endif %}
             </td>
             <td>
-                {% if edit_mode %}<strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>{% endif %}
                 {% if snippet2 %}
                     <img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;">
                 {% else %}
@@ -27,8 +25,16 @@
                 {% endif %}</td>
         </tr>
         {% if edit_mode %}<tr>
-            <td>Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
-            <td>Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong></td>
+            <td>
+                {% if snippet1 %}
+                    Fragmenta vieta: <strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>
+                {% endif %}
+                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
+            <td>
+                {% if snippet2 %}
+                    Fragmenta vieta: <strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>
+                {% endif %}
+                Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong></td>
         </tr>{% endif %}
         <tr>
             <td><textarea name="text1" cols="70">{{ snippet1.text }}</textarea></td>
