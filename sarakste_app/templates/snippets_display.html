@@ -2,7 +2,7 @@
 
 {% block content %}
 {% load static %}
-<form method="POST">
+<form method="POST" action="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">
     {% csrf_token %}
     <table>
         <tr>
