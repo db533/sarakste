@@ -26,14 +26,10 @@
         </tr>
         {% if edit_mode %}<tr>
             <td>
-                {% if snippet1 %}
-                    Fragmenta vieta: <strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>
-                {% endif %}
+                Fragmenta vieta: <strong>{{ snippet1.segment }} - {{ snippet1.place }} </strong>
                 Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
             <td>
-                {% if snippet2 %}
-                    Fragmenta vieta: <strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>
-                {% endif %}
+                Fragmenta vieta: <strong>{{ snippet2.segment }} - {{ snippet2.place }} </strong>
                 Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong></td>
         </tr>{% endif %}
         <tr>
