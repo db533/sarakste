@@ -67,6 +67,10 @@ def display_snippets(request):
         return redirect('display_snippets')
 
     prev_snippet = Snippet.objects.filter(segment_id=segment_id, place=F('place') - 1).first()
+    if place1 > 1:
+        prev_snippet_exists = True
+    else:
+        prev_snippet_exists = False
 
     context = {
         'snippet1': snippet1,
@@ -75,6 +79,7 @@ def display_snippets(request):
         'user_snippet2': user_snippet2,
         'prev_snippet': prev_snippet,
         'edit_mode': edit_mode,  # Add edit mode to context
+        'prev_snippet_exists' : prev_snippet_exists
     }
 
     return render(request, 'snippets_display.html', context)

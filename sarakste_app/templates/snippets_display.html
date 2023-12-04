@@ -18,7 +18,7 @@
             <td>{% if edit_mode %}{{ snippet2.segment }} - {{ snippet2.place }} {% endif %}{{ snippet2.filename }}</td>
         </tr>
         {% if edit_mode %}<tr>
-            <td>Prior overlap: {{ prev_snippet.overlaprowcount }} Next overlap:{{ snippet1.overlaprowcount }} {% endif %}</td>
+            <td>Prior overlap: {% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %} Next overlap:{{ snippet1.overlaprowcount }} {% endif %}</td>
             <td>Prior overlap: {{ snippet1.overlaprowcount }} Next overlap:{{ snippet2.overlaprowcount }} {% endif %}</td>
         </tr>{% endif %}
         <tr>
