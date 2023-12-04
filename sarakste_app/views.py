@@ -48,28 +48,31 @@ def display_snippets(request):
         summary1_text = request.POST.get('summary1', '').strip()
         summary2_text = request.POST.get('summary2', '').strip()
 
-        if summary1_text:
-            summary1, _ = Summary.objects.get_or_create(title=summary1_text)
-            snippet1.summary = summary1
-        else:
-            snippet1.summary = None
+        if snippet1 is not None:
+            if summary1_text:
+                summary1, _ = Summary.objects.get_or_create(title=summary1_text)
+                snippet1.summary = summary1
+            else:
+                snippet1.summary = None
+            snippet1.save()
 
-        if summary2_text:
-            summary2, _ = Summary.objects.get_or_create(title=summary2_text)
-            snippet2.summary = summary2
-        else:
-            snippet2.summary = None
-        user_snippet1.loved = 'loved1' in request.POST
-        user_snippet2.loved = 'loved2' in request.POST
+        if snippet2 is not None:
+            if summary2_text:
+                summary2, _ = Summary.objects.get_or_create(title=summary2_text)
+                snippet2.summary = summary2
+            else:
+                snippet2.summary = None
+            snippet2.save()
 
-        user_snippet1.marked = 'marked1' in request.POST
-        user_snippet2.marked = 'marked2' in request.POST
+        if user_snippet1 is not None:
+            user_snippet1.loved = 'loved1' in request.POST
+            user_snippet1.marked = 'marked1' in request.POST
+            user_snippet1.save()
 
-        # Save the updated objects
-        snippet1.save()
-        snippet2.save()
-        user_snippet1.save()
-        user_snippet2.save()
+        if user_snippet2 is not None:
+            user_snippet2.loved = 'loved2' in request.POST
+            user_snippet2.marked = 'marked2' in request.POST
+            user_snippet2.save()
 
         # Redirect to the same page to display updated content
         return redirect('display_snippets')
