@@ -75,7 +75,7 @@ def display_snippets(request):
         return redirect('display_snippets')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
-    if place1 > 1:
+    if int(place1) > 1:
         prev_snippet_exists = True
     else:
         prev_snippet_exists = False
