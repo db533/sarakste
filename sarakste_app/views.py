@@ -73,7 +73,7 @@ def display_snippets(request):
 
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
-        return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}')
+        return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
     if int(place1) > 1:

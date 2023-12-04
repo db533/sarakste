@@ -4,6 +4,9 @@
 {% load static %}
 <form method="POST" action="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">
     {% csrf_token %}
+    {% if request.GET.saved == 'true' %}
+        <p style="color : green">Izmaiņas saglabātas.</p>
+    {% endif %}
     <table>
         <tr>
             <th>Fragments 1</th>
