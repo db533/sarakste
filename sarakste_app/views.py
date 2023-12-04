@@ -19,13 +19,15 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def display_snippets(request):
-    # Default values
-    segment_id = 1
-    place1 = 1
-    place2 = 2
+    # Extract parameters from the request, using default values if not provided
+    frag1 = request.GET.get('frag1', 1)
+    place1 = request.GET.get('place1', 1)
+    frag2 = request.GET.get('frag2', 1)
+    place2 = request.GET.get('place2', 2)
+    edit_mode = request.GET.get('edit', 'False') == 'True'
 
-    snippet1 = get_object_or_404(Snippet, segment_id=segment_id, place=place1)
-    snippet2 = get_object_or_404(Snippet, segment_id=segment_id, place=place2)
+    snippet1 = get_object_or_404(Snippet, segment_id=frag1, place=place1)
+    snippet2 = get_object_or_404(Snippet, segment_id=frag2, place=place2)
 
     user_snippet1, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet1)
     user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
@@ -71,7 +73,8 @@ def display_snippets(request):
         'snippet2': snippet2,
         'user_snippet1': user_snippet1,
         'user_snippet2': user_snippet2,
-        'prev_snippet': prev_snippet
+        'prev_snippet': prev_snippet,
+        'edit_mode': edit_mode,  # Add edit mode to context
     }
 
     return render(request, 'snippets_display.html', context)

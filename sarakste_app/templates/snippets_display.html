@@ -14,9 +14,13 @@
             <td><img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;"></td>
         </tr>
         <tr>
-            <td>{{ snippet1.filename }}</td>
-            <td>{{ snippet2.filename }}</td>
+            <td>{% if edit_mode %}{{ snippet1.segment }} - {{ snippet1.place }} {% endif %}{{ snippet1.filename }}</td>
+            <td>{% if edit_mode %}{{ snippet2.segment }} - {{ snippet2.place }} {% endif %}{{ snippet2.filename }}</td>
         </tr>
+        {% if edit_mode %}<tr>
+            <td>Prior overlap: {{ prev_snippet.overlaprowcount }} Next overlap:{{ snippet1.overlaprowcount }} {% endif %}</td>
+            <td>Prior overlap: {{ snippet1.overlaprowcount }} Next overlap:{{ snippet2.overlaprowcount }} {% endif %}</td>
+        </tr>{% endif %}
         <tr>
             <td><textarea name="text1" cols="70">{{ snippet1.text }}</textarea></td>
             <td><textarea name="text2" cols="70">{{ snippet2.text }}</textarea></td>
@@ -51,5 +55,6 @@
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
     </table>
     <button type="submit">Saglabāt izmaiņas</button>
+    {% if edit_mode %}{% endif %}
 </form>
 {% endblock %}
