@@ -88,6 +88,10 @@ def display_snippets(request):
         'prev_snippet': prev_snippet,
         'edit_mode': edit_mode,  # Add edit mode to context
         'prev_snippet_exists' : prev_snippet_exists
+        'frag1' : frag1,
+        'place1' : place1
+        'frag2' : frag2,
+        'place2' : place2,
     }
 
     return render(request, 'snippets_display.html', context)
