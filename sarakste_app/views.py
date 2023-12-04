@@ -81,6 +81,37 @@ def display_snippets(request):
     else:
         prev_snippet_exists = False
 
+    # Logic for previous and next buttons
+    max_place = Snippet.objects.aggregate(Max('place'))['place__max']
+    max_segment = Snippet.objects.aggregate(Max('segment'))['segment__max']
+
+    # Previous button logic
+    prev_frag1, prev_place1 = frag1, int(place1) - 1
+    if prev_place1 < 1:
+        prev_frag1 -= 1
+        prev_place1 = Snippet.objects.filter(segment_id=prev_frag1).aggregate(Max('place'))['place__max'] or 1
+        if prev_frag1 < 1:
+            prev_frag1 = 1
+
+    prev_frag2, prev_place2 = frag2, int(place2) - 1
+    if prev_place2 < 1:
+        prev_frag2 -= 1
+        prev_place2 = Snippet.objects.filter(segment_id=prev_frag2).aggregate(Max('place'))['place__max'] or 1
+        if prev_frag2 < 1:
+            prev_frag2 = 1
+
+    # Next button logic
+    next_frag1, next_place1 = frag1, int(place1) + 1
+    if next_place1 > max_place:
+            next_frag1 += 1
+            next_place1 = 1
+
+
+    next_frag2, next_place2 = frag2, int(place2) + 1
+    if next_place2 > max_place:
+        next_frag2 += 1
+        next_place2 = 1
+
     context = {
         'snippet1': snippet1,
         'snippet2': snippet2,
@@ -93,6 +124,11 @@ def display_snippets(request):
         'place1' : place1,
         'frag2' : frag2,
         'place2' : place2,
+        'prev_frag1': prev_frag1, 'prev_place1': prev_place1,
+        'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
+        'next_frag1': next_frag1, 'next_place1': next_place1,
+        'next_frag2': next_frag2, 'next_place2': next_place2,
+        'max_place': max_place, 'max_segment': max_segment
     }
 
     return render(request, 'snippets_display.html', context)
