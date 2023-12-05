@@ -68,7 +68,7 @@
 
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
     </table>
-    {% if frag1 == 1 and place1 == 1 %}
+    {% if frag1 == "1" and place1 == "1" %}
     {% else %}
         <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
     {% endif %}
