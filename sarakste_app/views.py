@@ -58,7 +58,7 @@ def display_snippets(request):
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
             selected_summary2_id = request.POST.get('selected_summary2')
-            new_summary1_title = request.POST.get('new_summary2', '').strip()
+            new_summary2_title = request.POST.get('new_summary2', '').strip()
             if selected_summary2_id:
                 selected_summary2 = Summary.objects.get(id=selected_summary2_id)
                 snippet2.summary = selected_summary2
