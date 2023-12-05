@@ -41,22 +41,23 @@
         </tr>
         <tr>
             <td>
-                {% for summary in summaries %}
-                    <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}">
-                    <label for="summary1_{{ summary.id }}">{{ summary.title }}</label><br>
-                {% endfor %}
-                <!-- Textarea for new summary for snippet1 -->
-                <textarea name="new_summary1" cols="70" placeholder="Jauns apkopojums"></textarea>
-            </td>
-            <td>
-                <!-- Radio buttons for existing summaries for snippet2 -->
-                {% for summary in summaries %}
-                    <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}">
-                    <label for="summary2_{{ summary.id }}">{{ summary.title }}</label><br>
-                {% endfor %}
-                <!-- Textarea for new summary for snippet2 -->
-                <textarea name="new_summary2" cols="70" placeholder="Enter new summary title"></textarea>
-            </td>
+            <!-- Radio buttons for existing summaries for snippet1 -->
+            {% for summary in summaries %}
+                <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}" {% if snippet1.summary and summary.id == snippet1.summary.id %}checked{% endif %}>
+                <label for="summary1_{{ summary.id }}">{{ summary.title }}</label><br>
+            {% endfor %}
+            <!-- Textarea for new summary for snippet1 -->
+            <textarea name="new_summary1" cols="70" placeholder="Enter new summary title"></textarea>
+        </td>
+        <td>
+            <!-- Radio buttons for existing summaries for snippet2 -->
+            {% for summary in summaries %}
+                <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}" {% if snippet2.summary and summary.id == snippet2.summary.id %}checked{% endif %}>
+                <label for="summary2_{{ summary.id }}">{{ summary.title }}</label><br>
+            {% endfor %}
+            <!-- Textarea for new summary for snippet2 -->
+            <textarea name="new_summary2" cols="70" placeholder="Enter new summary title"></textarea>
+        </td>
         </tr>
         <tr>
             <!-- Checkboxes for loved field -->
