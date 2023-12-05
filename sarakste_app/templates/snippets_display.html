@@ -74,7 +74,7 @@
     {% endif %}
     <button type="submit">Saglabāt izmaiņas</button>
     max_segment: {{max_segment}} max_place: {{max_place}}
-    {% if place2 == max_place and frag2 == max_segment %}
+    {% if frag2 == max_segment and place2 == max_place %}
     {% else %}
         <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
     {% endif %}

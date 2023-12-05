@@ -127,7 +127,7 @@ def display_snippets(request):
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
-        'max_place': max_place, 'max_segment': max_segment
+        'max_place': str(max_place), 'max_segment': str(max_segment)
     }
 
     return render(request, 'snippets_display.html', context)
