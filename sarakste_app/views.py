@@ -47,24 +47,24 @@ def display_snippets(request):
             snippet1.text = request.POST.get('text1', '')
             selected_summary1_id = request.POST.get('selected_summary1')
             new_summary1_title = request.POST.get('new_summary1', '').strip()
-            if selected_summary1_id:
-                selected_summary1 = Summary.objects.get(id=selected_summary1_id)
-                snippet1.summary = selected_summary1
-            elif new_summary1_title:
+            if new_summary1_title:
                 new_summary1, _ = Summary.objects.get_or_create(title=new_summary1_title)
                 snippet1.summary = new_summary1
+            elif selected_summary1_id:
+                selected_summary1 = Summary.objects.get(id=selected_summary1_id)
+                snippet1.summary = selected_summary1
             snippet1.save()
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
             selected_summary2_id = request.POST.get('selected_summary2')
             new_summary2_title = request.POST.get('new_summary2', '').strip()
-            if selected_summary2_id:
-                selected_summary2 = Summary.objects.get(id=selected_summary2_id)
-                snippet2.summary = selected_summary2
-            elif new_summary2_title:
+            if new_summary2_title:
                 new_summary2, _ = Summary.objects.get_or_create(title=new_summary2_title)
                 snippet2.summary = new_summary2
+            elif selected_summary2_id:
+                selected_summary2 = Summary.objects.get(id=selected_summary2_id)
+                snippet2.summary = selected_summary2
             snippet2.save()
 
         if user_snippet1 is not None:
