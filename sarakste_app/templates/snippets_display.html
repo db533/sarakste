@@ -40,8 +40,8 @@
             <td><textarea name="text2" cols="70">{{ snippet2.text }}</textarea></td>
         </tr>
         <tr>
-            <td><textarea name="summary1" cols="70">{{ snippet1.summary }}</textarea></td>
-            <td><textarea name="summary2" cols="70">{{ snippet2.summary }}</textarea></td>
+            <td><textarea name="summary1" cols="70">{{ snippet1.summary.title }}</textarea></td>
+            <td><textarea name="summary2" cols="70">{{ snippet2.summary.title }}</textarea></td>
         </tr>
         <tr>
             <!-- Checkboxes for loved field -->
@@ -73,7 +73,6 @@
         <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
     {% endif %}
     <button type="submit">Saglabāt izmaiņas</button>
-    max_segment: {{max_segment}} max_place: {{max_place}}
     {% if frag2 == max_segment and place2 == max_place %}
     {% else %}
         <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>

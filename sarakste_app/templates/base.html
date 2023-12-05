@@ -18,6 +18,8 @@
         <ul class="sidebar-nav">
           {% if user.is_authenticated %}
             <h2>D un D sarakste</h2>
+            <p><li>Sarunas fragmenti:</li></p>
+
             <p><li><strong><a href="{% url 'logout' %}?next={{ request.path }}">Atslēgties</a></strong></li></p>
           {% else %}
             <li><a href="{% url 'login' %}?next={{ request.path }}">Pieslēgties</a></li>
