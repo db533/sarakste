@@ -27,37 +27,19 @@
                     Šāds fragments neeksistē.
                 {% endif %}</td>
         </tr>
-        {% if edit_mode %}<tr>
-            <td>
-                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>
-                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
-            <td>
-                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong>
-                Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong></td>
-        </tr>{% endif %}
-        <tr>
-            <td><textarea name="text1" cols="70">{{ snippet1.text }}</textarea></td>
-            <td><textarea name="text2" cols="70">{{ snippet2.text }}</textarea></td>
-        </tr>
         <tr>
             <td>
-            <!-- Radio buttons for existing summaries for snippet1 -->
-            {% for summary in summaries %}
-                <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}" {% if snippet1.summary and summary.id == snippet1.summary.id %}checked{% endif %}>
-                <label for="summary1_{{ summary.id }}">{{ summary.title }}</label><br>
-            {% endfor %}
-            <!-- Textarea for new summary for snippet1 -->
-            <textarea name="new_summary1" cols="70" placeholder="Enter new summary title"></textarea>
-        </td>
-        <td>
-            <!-- Radio buttons for existing summaries for snippet2 -->
-            {% for summary in summaries %}
-                <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}" {% if snippet2.summary and summary.id == snippet2.summary.id %}checked{% endif %}>
-                <label for="summary2_{{ summary.id }}">{{ summary.title }}</label><br>
-            {% endfor %}
-            <!-- Textarea for new summary for snippet2 -->
-            <textarea name="new_summary2" cols="70" placeholder="Enter new summary title"></textarea>
-        </td>
+                {% if frag1 == "1" and place1 == "1" %}
+                {% else %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% endif %}
+                <button type="submit">Saglabāt izmaiņas</button>
+                {% if frag2 == max_segment and place2 == max_place %}
+                {% else %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% endif %}
+            </td>
+
         </tr>
         <tr>
             <!-- Checkboxes for loved field -->
@@ -81,17 +63,40 @@
                 <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
             </td>
         </tr>
+        {% if edit_mode %}<tr>
+            <td>
+                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>
+                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
+            <td>
+                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong>
+                Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong></td>
+        </tr>{% endif %}
+        <tr>
+            <td><textarea name="text1" cols="70">{{ snippet1.text }}</textarea></td>
+            <td><textarea name="text2" cols="70">{{ snippet2.text }}</textarea></td>
+        </tr>
+        <tr>
+            <td>
+            <!-- Radio buttons for existing summaries for snippet1 -->
+            {% for summary in summaries %}
+                <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}" {% if snippet1.summary and summary.id == snippet1.summary.id %}checked{% endif %}>
+                <label for="summary1_{{ summary.id }}">{{ summary.title }}</label><br>
+            {% endfor %}
+            <!-- Textarea for new summary for snippet1 -->
+            <textarea name="new_summary1" cols="70" placeholder="Jauns apraksts"></textarea>
+        </td>
+        <td>
+            <!-- Radio buttons for existing summaries for snippet2 -->
+            {% for summary in summaries %}
+                <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}" {% if snippet2.summary and summary.id == snippet2.summary.id %}checked{% endif %}>
+                <label for="summary2_{{ summary.id }}">{{ summary.title }}</label><br>
+            {% endfor %}
+            <!-- Textarea for new summary for snippet2 -->
+            <textarea name="new_summary2" cols="70" placeholder="Jauns apraksts"></textarea>
+        </td>
+        </tr>
 
         <!-- Repeat for other fields like text, summary title, checkboxes, etc. -->
     </table>
-    {% if frag1 == "1" and place1 == "1" %}
-    {% else %}
-        <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
-    {% endif %}
-    <button type="submit">Saglabāt izmaiņas</button>
-    {% if frag2 == max_segment and place2 == max_place %}
-    {% else %}
-        <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
-    {% endif %}
 </form>
 {% endblock %}
