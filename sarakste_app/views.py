@@ -26,6 +26,8 @@ def display_snippets(request):
     place2 = request.GET.get('place2', 2)
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
+    # Fetch all existing summaries
+    summaries = Summary.objects.all()
     try:
         snippet1 = Snippet.objects.get(segment_id=frag1, place=place1)
         user_snippet1, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet1)
@@ -43,22 +45,26 @@ def display_snippets(request):
     if request.method == 'POST':
         if snippet1 is not None:
             snippet1.text = request.POST.get('text1', '')
-            summary1_text = request.POST.get('summary1', '').strip()
-            if summary1_text:
-                summary1, _ = Summary.objects.get_or_create(title=summary1_text)
-                snippet1.summary = summary1
-            else:
-                snippet1.summary = None
+            selected_summary1_id = request.POST.get('selected_summary1')
+            new_summary1_title = request.POST.get('new_summary1', '').strip()
+            if selected_summary1_id:
+                selected_summary1 = Summary.objects.get(id=selected_summary1_id)
+                snippet1.summary = selected_summary1
+            elif new_summary1_title:
+                new_summary1, _ = Summary.objects.get_or_create(title=new_summary1_title)
+                snippet1.summary = new_summary1
             snippet1.save()
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
-            summary2_text = request.POST.get('summary2', '').strip()
-            if summary2_text:
-                summary2, _ = Summary.objects.get_or_create(title=summary2_text)
-                snippet2.summary = summary2
-            else:
-                snippet2.summary = None
+            selected_summary2_id = request.POST.get('selected_summary2')
+            new_summary1_title = request.POST.get('new_summary2', '').strip()
+            if selected_summary2_id:
+                selected_summary2 = Summary.objects.get(id=selected_summary2_id)
+                snippet2.summary = selected_summary2
+            elif new_summary2_title:
+                new_summary2, _ = Summary.objects.get_or_create(title=new_summary2_title)
+                snippet2.summary = new_summary2
             snippet2.save()
 
         if user_snippet1 is not None:
@@ -73,6 +79,8 @@ def display_snippets(request):
 
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
+        snippet1.save()
+        snippet2.save()
         return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
@@ -127,7 +135,8 @@ def display_snippets(request):
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
-        'max_place': str(max_place), 'max_segment': str(max_segment)
+        'max_place': str(max_place), 'max_segment': str(max_segment),
+        'summaries': summaries,
     }
 
     return render(request, 'snippets_display.html', context)

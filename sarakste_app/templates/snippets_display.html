@@ -40,8 +40,23 @@
             <td><textarea name="text2" cols="70">{{ snippet2.text }}</textarea></td>
         </tr>
         <tr>
-            <td><textarea name="summary1" cols="70">{{ snippet1.summary.title }}</textarea></td>
-            <td><textarea name="summary2" cols="70">{{ snippet2.summary.title }}</textarea></td>
+            <td>
+                {% for summary in summaries %}
+                    <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}">
+                    <label for="summary1_{{ summary.id }}">{{ summary.title }}</label><br>
+                {% endfor %}
+                <!-- Textarea for new summary for snippet1 -->
+                <textarea name="new_summary1" cols="70" placeholder="Jauns apkopojums"></textarea>
+            </td>
+            <td>
+                <!-- Radio buttons for existing summaries for snippet2 -->
+                {% for summary in summaries %}
+                    <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}">
+                    <label for="summary2_{{ summary.id }}">{{ summary.title }}</label><br>
+                {% endfor %}
+                <!-- Textarea for new summary for snippet2 -->
+                <textarea name="new_summary2" cols="70" placeholder="Enter new summary title"></textarea>
+            </td>
         </tr>
         <tr>
             <!-- Checkboxes for loved field -->
