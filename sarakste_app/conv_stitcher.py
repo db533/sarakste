@@ -1,19 +1,34 @@
+import os
+import django
+import easyocr
+import sys
+import cv2
+from django.conf import settings
+# Configure Django settings
+sys.path.append('C:\\Users\\db533\\PycharmProjects\\sarakste\\sarakste\\sarakste')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sarakste.settings')  # Replace with your project's settings
+django.setup()
+
 import environ
 from django.conf import settings
-from myapp.models import Snippet  # Replace 'myapp' with your app name
+from sarakste_app.models import *  # Replace 'myapp' with your app name
 
 env = environ.Env()
 environ.Env.read_env(overwrite=True)
 # Get the IP address of this host
 DEBUG = env.bool('debug', default=False)
+RUN_REMOTE = env.bool('RUN_REMOTE', default=False)
+REMOTE_IP = env.str('REMOTE_IP')
 import socket
 hostname = socket.gethostname()
 IP = socket.gethostbyname(hostname)
 HOSTED = env.bool('HOSTED', default=False)
 print('HOSTED:',HOSTED)
 if HOSTED:
-    # .envfilestatesthisenvironmentishosted,sousetheretrievedIPaddress.
-    host_ip = IP
+    if RUN_REMOTE == True:
+        host_ip = '212.7.207.88'
+    else:
+        host_ip = IP
     db_name = env.str('MYSQL_PROD_DB_NAME')
     db_user = env.str('MYSQL_PROD_DB_USER')
     db_pwd = env.str('MYSQL_PROD_PWD')
@@ -33,6 +48,7 @@ from tkinter import Toplevel  # Add this line to import Toplevel
 from PIL import Image, ImageTk, ImageChops, ImageStat
 import os
 import time
+
 
 def find_matching_rows(earlier_image_path, later_image_path):
     header_size = 130
@@ -342,54 +358,109 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
     print('The new image was not matched to any existing sequence.')
     return None, None
 
+def filter_text_above_threshold(ocr_results, y_threshold):
+    filtered_results = []
+
+    for bounding_box, text, confidence in ocr_results:
+        # Check if all y-coordinates in the bounding box are above the threshold
+        if all(y > y_threshold for x, y in bounding_box):
+            filtered_results.append((bounding_box, text, confidence))
+
+    return filtered_results
+
+def ocr_image(filename):
+    raw_path = filename.replace('\\', '\\\\')
+    print('OCR being performed on', filename)
+    #img = cv2.imread(raw_path)
+    #if img is None:
+    #    raise ValueError(f"Unable to open image file: {raw_path}")
+
+    reader = easyocr.Reader(['lv'])  # Latvian language
+
+    # Perform OCR
+    result = reader.readtext(raw_path)
+    print('result:',result)
+    filtered_ocr_results = filter_text_above_threshold(result, 214)
+    detected_text = ' '.join([text[1] for text in filtered_ocr_results])
+    print('detected_text:', detected_text)
+
+    # Create new Snippet instance
+    #Snippet.objects.create(filename=filename, text=detected_text)
+    #print(f'Processed image: {filename}')
+    return
+
+
+
 # Main logic
-image_folder = "C:\\Users\\db533\\OneDrive\\Koris\\Dacīte - Dainis"
-csv_file_path = 'confirmed_sequences.csv'  # Path to your CSV file
-confirmed_sequences = load_confirmed_sequences_from_csv(csv_file_path)
-image_files = [(os.path.join(image_folder, filename), os.path.getmtime(os.path.join(image_folder, filename)))
+image_folder = "C:\\Users\\db533\\OneDrive\\Koris\\Dacite-Dainis"
+#csv_file_path = 'confirmed_sequences.csv'  # Path to your CSV file
+#confirmed_sequences = load_confirmed_sequences_from_csv(csv_file_path)
+print('Creating list of images to process')
+image_files_with_path = [(os.path.join(image_folder, filename), os.path.getmtime(os.path.join(image_folder, filename)))
                for filename in os.listdir(image_folder) if filename.endswith(".png")]
+image_files = [(filename)
+                for filename in os.listdir(image_folder) if filename.endswith(".png")]
+image_files_with_path_sorted = sorted(image_files_with_path, key=lambda x: x[1])
 image_files_sorted = sorted(image_files, key=lambda x: x[1])
 image_count = len(image_files)
 
+
+
 # User interaction loop
-sequence_number = len(confirmed_sequences) + 1
+#sequence_number = len(confirmed_sequences) + 1
 i = 0
 while i < len(image_files_sorted) - 1:
-    last_image_path = image_files_sorted[i][0]
-    next_image_path = image_files_sorted[i + 1][0]
-    print('Comparing images', i, 'and', i+1, 'of', image_count)
-    images_in_sequence = False
-    overlap_height = find_matching_rows(last_image_path, next_image_path)
-    if overlap_height >3:
-        images_in_sequence = True
-    display_images_for_confirmation(last_image_path, next_image_path, overlap=True, confirm_callback=on_comparison_confirmed, not_in_sequence_callback=on_not_in_sequence_confirmed)
-    if images_in_sequence == False:
-        # Automatically compare the image with the beginning and end of each sequence
-        matching_sequence, position = find_matching_sequence(last_image_path, confirmed_sequences, sequence_number)
-        if matching_sequence:
-            if position == 'follows':
-                confirmed_sequences[matching_sequence].append(image_files_sorted[i][0])
-            elif position == 'precedes':
-                confirmed_sequences[matching_sequence].insert(0, image_files_sorted[i][0])
-            print(f"Image was added to sequence {matching_sequence} as it {position} the sequence.")
-        else:
-            # Start a new sequence
-            confirmed_sequences[sequence_number] = [image_files_sorted[i][0]]
-            sequence_number += 1
-        i += 1
+    # Check if the image already is processed as a snippet in the database
+    filename = image_files_sorted[i]
+    filname_with_path = image_files_with_path_sorted[i][0]
+
+    #all_snippets = Snippet.objects.filter().all()
+    #for snippet in all_snippets:
+    #    print(snippet)
+    ocr_image(filname_with_path)
+
+    if not Snippet.objects.filter(filename=filename).exists():
+        print('filename:',filename,'Snippet does not exist.')
+
     else:
-        if sequence_number not in confirmed_sequences:
-            confirmed_sequences[sequence_number] = []
-        confirmed_sequences[sequence_number].append(image_files_sorted[i][0])
-        if i + 1 < len(image_files_sorted):
-            confirmed_sequences[sequence_number].append(image_files_sorted[i + 1][0])
-        i += 1  # Increment by 1 to keep the second image as the first of the next pair
+        print('filename:',filename,'Snippet exists.')
+    i += 1
+    if False:
+        last_image_path = image_files_sorted[i][0]
+        next_image_path = image_files_sorted[i + 1][0]
+        print('Comparing images', i, 'and', i+1, 'of', image_count)
+        images_in_sequence = False
+        overlap_height = find_matching_rows(last_image_path, next_image_path)
+        if overlap_height >3:
+            images_in_sequence = True
+        display_images_for_confirmation(last_image_path, next_image_path, overlap=True, confirm_callback=on_comparison_confirmed, not_in_sequence_callback=on_not_in_sequence_confirmed)
+        if images_in_sequence == False:
+            # Automatically compare the image with the beginning and end of each sequence
+            matching_sequence, position = find_matching_sequence(last_image_path, confirmed_sequences, sequence_number)
+            if matching_sequence:
+                if position == 'follows':
+                    confirmed_sequences[matching_sequence].append(image_files_sorted[i][0])
+                elif position == 'precedes':
+                    confirmed_sequences[matching_sequence].insert(0, image_files_sorted[i][0])
+                print(f"Image was added to sequence {matching_sequence} as it {position} the sequence.")
+            else:
+                # Start a new sequence
+                confirmed_sequences[sequence_number] = [image_files_sorted[i][0]]
+                sequence_number += 1
+            i += 1
+        else:
+            if sequence_number not in confirmed_sequences:
+                confirmed_sequences[sequence_number] = []
+            confirmed_sequences[sequence_number].append(image_files_sorted[i][0])
+            if i + 1 < len(image_files_sorted):
+                confirmed_sequences[sequence_number].append(image_files_sorted[i + 1][0])
+            i += 1  # Increment by 1 to keep the second image as the first of the next pair
 
-    save_confirmed_sequences_to_csv(confirmed_sequences, csv_file_path)
+        save_confirmed_sequences_to_csv(confirmed_sequences, csv_file_path)
 
-# Handle the last image if it hasn't been processed
-if i == len(image_files_sorted) - 1:
-    # Logic to handle the last image
-    pass
+        # Handle the last image if it hasn't been processed
+        if i == len(image_files_sorted) - 1:
+            # Logic to handle the last image
+            pass
 
 # No stitching and saving to a single image file in this version, since we're handling sequences

@@ -23,6 +23,29 @@ class Snippet(models.Model):
     summary = models.ForeignKey(Summary, on_delete=models.SET_NULL, null=True, blank=True)  # Corrected ForeignKey
     users = models.ManyToManyField(User, through='UserSnippet')
     overlaprowcount = models.IntegerField(null=True, blank=True, default=0, help_text='The number of rows from this image that overlap on the next image in the segment.')
+    DAY_OF_WEEK = (
+        ('1', 'Pirmdiena'),
+        ('2', 'Otrdiena'),
+        ('3', 'Trešdiena'),
+        ('4', 'Ceturtdiena'),
+        ('5', 'Piektdiena'),
+        ('6', 'Sestdiena'),
+        ('7', 'Svētdiena'),
+    )
+    weekday = models.CharField(max_length=1, choices=DAY_OF_WEEK, null=True, blank=True,
+                               help_text='Nēdēļas diena',
+                               verbose_name=('Nēdēļas diena'))
+    first_time = models.TimeField(
+        help_text=('Pirmā rakstītā teikuma laiks'),
+        null=True,
+        blank=True
+    )
+    last_time = models.TimeField(
+        help_text=('Pēdējā rakstītā teikuma laiks'),
+        null=True,
+        blank=True
+    )
+
 
 class UserSnippet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -35,3 +58,26 @@ class UserSnippet(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.snippet.filename}"
+
+class Sentence(models.Model):
+    SPEAKERS = (
+        ('0', 'Dacīte'),
+        ('1', 'Dainis'),
+    )
+    speaker = models.CharField(max_length=1, choices=SPEAKERS, default='0',
+                               help_text='Kurš rakstīja šo teikumu',
+                               verbose_name=('Teikuma autors'))
+    text = models.TextField(help_text='Rakstītais teikums', null=True, blank=True)
+    date = models.DateField(
+        help_text=('Datums, kad teikums tika izrunāts'),
+        null=True,
+        blank=True
+    )
+    time = models.TimeField(
+        help_text=('Laiks, kad teikums tika rakstīts'),
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"{self.get_speaker_display()}: {self.text[:50]}..."

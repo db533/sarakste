@@ -23,9 +23,15 @@ hostname = socket.gethostname()
 IP = socket.gethostbyname(hostname)
 HOSTED = env.bool('HOSTED', default=False)
 print('HOSTED:',HOSTED)
+RUN_REMOTE = env.bool('RUN_REMOTE', default=False)
+print('RUN_REMOTE:',RUN_REMOTE)
+REMOTE_IP = env.str('REMOTE_IP')
+
 if HOSTED:
-    # .envfilestatesthisenvironmentishosted,sousetheretrievedIPaddress.
-    host_ip = IP
+    if RUN_REMOTE == True:
+        host_ip = '212.7.207.88'
+    else:
+        host_ip = IP
     db_name = env.str('MYSQL_PROD_DB_NAME')
     db_user = env.str('MYSQL_PROD_DB_USER')
     db_pwd = env.str('MYSQL_PROD_PWD')
