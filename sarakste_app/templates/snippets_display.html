@@ -65,12 +65,14 @@
         </tr>
         {% if edit_mode %}<tr>
             <td>
-                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>
-                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong></td>
+                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong><br>
+                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong><br>
+                Weekday: <strong>{{ snippet1.weekday }}</strong> Earliest time: <strong>{{ snippet1.first_time }}</strong> Latest time: <strong>{{ snippet1.last_time }}</strong>
+            </td>
             <td>
                 Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong><br>
                 Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong><br>
-                Weekday: {{ snippet1.weekday }} Earliest time: {{ snippet1.first_time }} Latest time: {{ snippet1.last_time }}
+                Weekday: <strong>{{ snippet2.weekday }}</strong> Earliest time: <strong>{{ snippet2.first_time }}</strong> Latest time: <strong>{{ snippet2.last_time }}</strong>
             </td>
         </tr>{% endif %}
         <tr>
