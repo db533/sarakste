@@ -79,7 +79,7 @@
             <td>
                 {% if edit_mode %}
                     {% for sentence in sentences1 %}
-                        {% if sentence.speaker == 0 %}Mīļā
+                        {% if sentence.speaker == "0" %}Mīļā
                         {% else %}Mīļais
                         {% endif %} ({{ sentence.time|date:"H:i" }}): <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
                     <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
@@ -90,7 +90,7 @@
             <td>
                 {% if edit_mode %}
                     {% for sentence in sentences2 %}
-                        {% if sentence.speaker == 0 %}Mīļā
+                        {% if sentence.speaker == "0" %}Mīļā
                         {% else %}Mīļais
                         {% endif %} ({{ sentence.time|date:"H:i" }}): <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
                     <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
