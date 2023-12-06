@@ -77,6 +77,13 @@ def display_snippets(request):
             user_snippet2.marked = 'marked2' in request.POST
             user_snippet2.save()
 
+        # Look for modifications to Sentences and update the Sentence instances.
+        for key, value in request.POST.items():
+            if key.startswith('sentence_id_'):
+                sentence_id = value
+                sentence_text = request.POST.get(f'sentence_text_{sentence_id}', '').strip()
+                Sentence.objects.filter(id=sentence_id).update(text=sentence_text)
+
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
         snippet1.save()
@@ -119,6 +126,16 @@ def display_snippets(request):
         next_frag2 =int(frag2)+1
         next_place2 = 1
 
+    if snippet1:
+        sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
+    else:
+        sentences1 = []
+
+    if snippet2:
+        sentences2 = Sentence.objects.filter(snippet=snippet2).order_by('sequence')
+    else:
+        sentences2 = []
+
     context = {
         'snippet1': snippet1,
         'snippet2': snippet2,
@@ -137,6 +154,8 @@ def display_snippets(request):
         'next_frag2': next_frag2, 'next_place2': next_place2,
         'max_place': str(max_place), 'max_segment': str(max_segment),
         'summaries': summaries,
+        'sentences1': sentences1,
+        'sentences2': sentences2,
     }
 
     return render(request, 'snippets_display.html', context)

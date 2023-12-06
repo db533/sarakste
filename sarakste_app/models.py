@@ -68,6 +68,8 @@ class Sentence(models.Model):
                                help_text='Kurš rakstīja šo teikumu',
                                verbose_name=('Teikuma autors'))
     text = models.TextField(help_text='Rakstītais teikums', null=True, blank=True)
+    snippet = models.ForeignKey(Snippet, on_delete=models.CASCADE)
+    sequence = models.IntegerField(help_text='The position of this sentence in the Snippet.')
     date = models.DateField(
         help_text=('Datums, kad teikums tika izrunāts'),
         null=True,
