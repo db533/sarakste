@@ -19,10 +19,10 @@ class Snippet(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.SET_NULL, null=True)  # Corrected ForeignKey
     # target_url = models.CharField(max_length=255, help_text='The url to the image for the snippet.', null=True)
     filename = models.CharField(max_length=30, help_text='The filename of the image for the snippet.')
-    text = models.TextField(help_text='The written text in the image of the snippet.', null=True, blank=True)
     summary = models.ForeignKey(Summary, on_delete=models.SET_NULL, null=True, blank=True)  # Corrected ForeignKey
     users = models.ManyToManyField(User, through='UserSnippet')
-    overlaprowcount = models.IntegerField(null=True, blank=True, default=0, help_text='The number of rows from this image that overlap on the next image in the segment.')
+    #overlaprowcount = models.IntegerField(null=True, blank=True, default=0, help_text='The number of rows from this image that overlap on the next image in the segment.')
+
     DAY_OF_WEEK = (
         ('1', 'Pirmdiena'),
         ('2', 'Otrdiena'),
@@ -70,6 +70,7 @@ class Sentence(models.Model):
     text = models.TextField(help_text='Rakstītais teikums', null=True, blank=True)
     snippet = models.ForeignKey(Snippet, on_delete=models.CASCADE)
     sequence = models.IntegerField(help_text='The position of this sentence in the Snippet.')
+    confidence = models.DecimalField(max_digits=6, decimal_places=4, null=True)
     date = models.DateField(
         help_text=('Datums, kad teikums tika izrunāts'),
         null=True,
@@ -83,3 +84,11 @@ class Sentence(models.Model):
 
     def __str__(self):
         return f"{self.get_speaker_display()}: {self.text[:50]}..."
+
+class SnippetOverlap(models.Model):
+    first_snippet = models.ForeignKey(Snippet, related_name='current_overlaps', on_delete=models.CASCADE, help_text='The first snippet in the comparison.')
+    second_snippet = models.ForeignKey(Snippet, related_name='overlapping_snippets', on_delete=models.CASCADE, help_text='The second snippet int he comparison.')
+    overlaprowcount = models.IntegerField(default=0, help_text='The number of rows from this image that overlap on the next image.')
+
+    def __str__(self):
+        return f"{self.current_snippet.filename} overlaps {self.overlapping_snippet.filename}: {self.overlaprowcount} rows"

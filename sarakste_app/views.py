@@ -19,10 +19,13 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def display_snippets(request):
+
+    min_segment = Snippet.objects.aggregate(Min('segment'))['segment__min']
+
     # Extract parameters from the request, using default values if not provided
-    frag1 = request.GET.get('frag1', 1)
+    frag1 = request.GET.get('frag1', min_segment)
     place1 = request.GET.get('place1', 1)
-    frag2 = request.GET.get('frag2', 1)
+    frag2 = request.GET.get('frag2', min_segment)
     place2 = request.GET.get('place2', 2)
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
@@ -83,11 +86,21 @@ def display_snippets(request):
                 sentence_id = value
                 sentence_text = request.POST.get(f'sentence_text_{sentence_id}', '').strip()
                 Sentence.objects.filter(id=sentence_id).update(text=sentence_text)
+            if key.startswith('delete_sentence_'):
+                sentence_id = key.split('_')[-1]
+                try:
+                    sentence_to_delete = Sentence.objects.get(id=sentence_id)
+                    sentence_to_delete.delete()
+                except Sentence.DoesNotExist:
+                    pass  # Handle the case where the sentence does not exist
 
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
-        snippet1.save()
-        snippet2.save()
+
+        if snippet1 is not None:
+            snippet1.save()
+        if snippet2 is not None:
+            snippet2.save()
         return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
@@ -117,14 +130,16 @@ def display_snippets(request):
 
     # Next button logic
     next_frag1, next_place1 = frag1, int(place1) + 1
-    if next_place1 > max_place:
+    if max_place is not None:
+        if next_place1 > max_place:
             next_frag1 = int(frag1)+1
             next_place1 = 1
 
     next_frag2, next_place2 = frag2, int(place2) + 1
-    if next_place2 > max_place:
-        next_frag2 =int(frag2)+1
-        next_place2 = 1
+    if max_place is not None:
+        if next_place2 > max_place:
+            next_frag2 =int(frag2)+1
+            next_place2 = 1
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
@@ -136,26 +151,43 @@ def display_snippets(request):
     else:
         sentences2 = []
 
+    if snippet1:
+        top_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
+            '-overlaprowcount')[:3]
+        top_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
+            '-overlaprowcount')[:3]
+    else:
+        top_overlaps_as_first_snippet1 = []
+        top_overlaps_as_second_snippet1 = []
+
+    if snippet2:
+        top_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
+            '-overlaprowcount')[:3]
+        top_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
+            '-overlaprowcount')[:3]
+    else:
+        top_overlaps_as_first_snippet2 = []
+        top_overlaps_as_second_snippet2 = []
+
     context = {
-        'snippet1': snippet1,
-        'snippet2': snippet2,
-        'user_snippet1': user_snippet1,
-        'user_snippet2': user_snippet2,
+        'snippet1': snippet1,'snippet2': snippet2,
+        'user_snippet1': user_snippet1,'user_snippet2': user_snippet2,
         'prev_snippet': prev_snippet,
         'edit_mode': edit_mode,  # Add edit mode to context
         'prev_snippet_exists' : prev_snippet_exists,
-        'frag1' : frag1,
-        'place1' : place1,
-        'frag2' : frag2,
-        'place2' : place2,
+        'frag1' : frag1, 'place1' : place1,
+        'frag2' : frag2, 'place2' : place2,
         'prev_frag1': prev_frag1, 'prev_place1': prev_place1,
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
         'max_place': str(max_place), 'max_segment': str(max_segment),
         'summaries': summaries,
-        'sentences1': sentences1,
-        'sentences2': sentences2,
+        'sentences1': sentences1,'sentences2': sentences2,
+        'top_overlaps_as_first_snippet1': top_overlaps_as_first_snippet1,
+        'top_overlaps_as_second_snippet1': top_overlaps_as_second_snippet1,
+        'top_overlaps_as_first_snippet2': top_overlaps_as_first_snippet2,
+        'top_overlaps_as_second_snippet2': top_overlaps_as_second_snippet2,
     }
 
     return render(request, 'snippets_display.html', context)

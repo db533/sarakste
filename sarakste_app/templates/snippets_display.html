@@ -65,24 +65,71 @@
         </tr>
         {% if edit_mode %}<tr>
             <td>
-                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong><br>
-                Prior overlap: <strong>{% if prev_snippet_exists %}{{ prev_snippet.overlaprowcount }}{% else %} No prior snippet.{% endif %}</strong> Next overlap: <strong>{{ snippet1.overlaprowcount }}</strong><br>
-                Weekday: <strong>{{ snippet1.weekday }}</strong> Earliest time: <strong>{{ snippet1.first_time }}</strong> Latest time: <strong>{{ snippet1.last_time }}</strong>
+                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong> Snippet id: {{ snippet1.id }}<br>
+                Weekday: <strong>{% if snippet1.weekday %}{{ snippet1.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
+                    <strong>{% if snippet1.first_time %}
+                        {{ snippet1.first_time|date:"H:i" }}
+                    {% else %}
+                        N/A
+                    {% endif %}</strong>
+                Latest time:
+                    <strong>{% if snippet1.last_time %}
+                        {{ snippet1.last_time|date:"H:i" }}
+                    {% else %}
+                        N/A
+                    {% endif %}</strong>
             </td>
             <td>
-                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong><br>
-                Prior overlap: <strong>{{ snippet1.overlaprowcount }}</strong> Next overlap: <strong>{{ snippet2.overlaprowcount }}</strong><br>
-                Weekday: <strong>{{ snippet2.weekday }}</strong> Earliest time: <strong>{{ snippet2.first_time }}</strong> Latest time: <strong>{{ snippet2.last_time }}</strong>
+                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong> Snippet id: {{ snippet2.id }}<br>
+                Weekday: <strong>{% if snippet2.weekday %}{{ snippet2.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
+                    <strong>{% if snippet2.first_time %}
+                        {{ snippet2.first_time|date:"H:i" }}
+                    {% else %}
+                        N/A
+                    {% endif %}</strong>
+                Latest time:
+                    <strong>{% if snippet2.last_time %}
+                        {{ snippet2.last_time|date:"H:i" }}
+                    {% else %}
+                        N/A
+                    {% endif %}</strong>
             </td>
-        </tr>{% endif %}
+        </tr>
+        <tr>
+            <td>
+                Snippet before this one:<br>
+                {% for overlap in top_overlaps_as_first_snippet1 %}
+                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                {% endfor %}
+                Snippet after this one:<br>
+                {% for overlap in top_overlaps_as_second_snippet1 %}
+                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                {% endfor %}
+            </td>
+            <td>
+                Snippet before this one:<br>
+                {% for overlap in top_overlaps_as_first_snippet2 %}
+                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                {% endfor %}
+                Snippet after this one:<br>
+                {% for overlap in top_overlaps_as_second_snippet2 %}
+                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                {% endfor %}
+            </td>
+
+        </tr>
+        {% endif %}
         <tr>
             <td>
                 {% if edit_mode %}
                     {% for sentence in sentences1 %}
                         {% if sentence.speaker == "0" %}Mīļā
                         {% else %}Mīļais
-                        {% endif %} ({{ sentence.time|date:"H:i" }}): <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
-                    <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
+                        {% endif %} ({{ sentence.time|date:"H:i" }}):
+                            <input type="checkbox" name="delete_sentence_{{ sentence.id }}" id="delete_sentence_{{ sentence.id }}">
+                            <label for="delete_sentence_{{ sentence.id }}">Delete</label>
+                            <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
+                            <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
                     {% endfor %}
                 {% else %}
                 {% endif %}
@@ -92,8 +139,11 @@
                     {% for sentence in sentences2 %}
                         {% if sentence.speaker == "0" %}Mīļā
                         {% else %}Mīļais
-                        {% endif %} ({{ sentence.time|date:"H:i" }}): <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
-                    <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
+                        {% endif %} ({{ sentence.time|date:"H:i" }}):
+                            <input type="checkbox" name="delete_sentence_{{ sentence.id }}" id="delete_sentence_{{ sentence.id }}">
+                            <label for="delete_sentence_{{ sentence.id }}">Delete</label>
+                            <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
+                            <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
                     {% endfor %}
                 {% else %}
                 {% endif %}

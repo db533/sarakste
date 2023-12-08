@@ -2,7 +2,9 @@ import os
 import django
 import easyocr
 import sys
-import cv2
+from django.db.models import Max
+import re
+
 from django.conf import settings
 # Configure Django settings
 sys.path.append('C:\\Users\\db533\\PycharmProjects\\sarakste\\sarakste\\sarakste')
@@ -50,12 +52,12 @@ import os
 import time
 
 
-def find_matching_rows(earlier_image_path, later_image_path):
+def find_matching_rows(earlier_image, later_image):
     header_size = 130
     footer_size = 90
 
-    earlier_image = Image.open(earlier_image_path)
-    later_image = Image.open(later_image_path)
+    earlier_image = Image.open(os.path.join(image_folder, earlier_image))
+    later_image = Image.open(os.path.join(image_folder, later_image))
     earlier_image.show()
     later_image.show()
 
@@ -67,6 +69,7 @@ def find_matching_rows(earlier_image_path, later_image_path):
     feasible_rows = list(range(header_size, later_height - footer_size))
     max_overlap = 0
     best_match_score = 999999999
+    prior_match_score = best_match_score
 
 
     for bottom_row in range(earlier_height - footer_size, footer_size-1, -1):  # Start from 90th row from bottom, up to the 90th row
@@ -95,12 +98,12 @@ def find_matching_rows(earlier_image_path, later_image_path):
 
                 # Compare segments
                 match_score = is_match(earlier_segment, later_segment)/later_segment_height
-                if match_score < best_match_score:
+                if match_score < prior_match_score:
                     best_matched_segment = later_segment
                     best_match_rows = later_segment.height
                 if len(feasible_rows) < 5:
                     print('Rows matched:', later_segment.height, 'match_score:',match_score, 'match_barrier:',match_barrier)
-                    if match_score < best_match_score:
+                    if match_score < prior_match_score:
                         best_match_score = match_score
                         best_matched_segment = later_segment
                         #best_matched_segment.show()
@@ -117,6 +120,7 @@ def find_matching_rows(earlier_image_path, later_image_path):
                     #print('bottom_row:',bottom_row)
                     #print('top_row:', top_row)
                     max_overlap = max(max_overlap, later_segment_height)
+                    prior_match_score = match_score
                 else:
                     #print('Dropping row',top_row)
                     feasible_rows.remove(top_row)
@@ -140,7 +144,7 @@ def is_match(segment1, segment2):
 
 
 # Function to display two images side by side for sequence confirmation
-def display_images_for_confirmation(image_path1, image_path2, overlap=True, confirm_callback=None, not_in_sequence_callback=None):
+def display_images_for_confirmation(image_path1, image_path2, overlap=True, confirm_callback=None, not_in_sequence_callback=None, show_next_callback=None):
     def close_window():
         root.destroy()
 
@@ -154,14 +158,20 @@ def display_images_for_confirmation(image_path1, image_path2, overlap=True, conf
             not_in_sequence_callback()
         root.destroy()
 
+    def show_next():
+        if show_next_callback:
+            show_next_callback()
+        root.destroy()
+
     root = tk.Tk()
     root.title("Image Comparison")
 
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
 
-    image1 = Image.open(image_path1)
-    image2 = Image.open(image_path2)
+
+    image1 = Image.open(os.path.join(image_folder, image_path1))
+    image2 = Image.open(os.path.join(image_folder, image_path2))
 
     if overlap:
         # [Overlap logic here - same as before]
@@ -209,12 +219,17 @@ def display_images_for_confirmation(image_path1, image_path2, overlap=True, conf
     label = tk.Label(root, image=tk_image)
     label.pack(side="top", fill="both", expand=True)
 
+    # Buttons "Show next" or "Not in sequence" or "Correct sequence"
+
+    show_next_button = tk.Button(root, text="Show next", command=show_next)
+    show_next_button.pack(side="bottom")
+
     # Not In Sequence Button
     not_in_sequence_button = tk.Button(root, text="Not in Sequence", command=not_in_sequence)
     not_in_sequence_button.pack(side="bottom")
 
     # Confirm Button
-    confirm_button = tk.Button(root, text="Confirm and Proceed", command=confirm_and_proceed)
+    confirm_button = tk.Button(root, text="Correct sequence", command=confirm_and_proceed)
     confirm_button.pack(side="bottom")
 
     root.geometry("+1200+0")
@@ -249,36 +264,20 @@ def on_comparison_confirmed():
     print(f"The image sequence was confirmed as part of the sequence.")
     global images_in_sequence
     images_in_sequence = True
+    awaiting_user_feedback = False
 
 def on_not_in_sequence_confirmed():
     print("The images are indicated to NOT be in sequence.")
     global images_in_sequence
     images_in_sequence = False
+    awaiting_user_feedback = False
 
+def on_show_next():
+    print("Show next comparison images.")
+    global show_next
+    show_next = True
+    awaiting_user_feedback = False
 
-# Function to save confirmed sequences to CSV
-def save_confirmed_sequences_to_csv(confirmed_sequences, csv_file_path):
-    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        for key, value in confirmed_sequences.items():
-            writer.writerow([key] + value)
-
-# Function to load confirmed sequences from CSV
-def load_confirmed_sequences_from_csv(csv_file_path):
-    confirmed_sequences = {}
-    try:
-        with open(csv_file_path, mode='r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                key = int(row[0])
-                confirmed_sequences[key] = row[1:]
-    except FileNotFoundError:
-        pass
-    except Exception as e:
-        print(f"An error occurred while reading the CSV file: {e}")
-    print('confirmed_sequences:')
-    print(confirmed_sequences)
-    return confirmed_sequences
 
 def get_image_part(image, part='top', strip_height=50):
     """
@@ -338,7 +337,8 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
                 print(f"The new image follows the sequence {seq_num}.")
                 display_images_for_confirmation(last_image_path, image_path, overlap=True,
                                                 confirm_callback=on_comparison_confirmed,
-                                                not_in_sequence_callback=on_not_in_sequence_confirmed)
+                                                not_in_sequence_callback=on_not_in_sequence_confirmed,
+                                                show_next_callback=on_show_next)
                 return seq_num, 'follows'
             # Check if the new image precedes the first image in the sequence
             overlap_height = find_matching_rows(image_path, first_image_path)
@@ -346,7 +346,8 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
                 print(f"The new image precedes the sequence {seq_num}.")
                 display_images_for_confirmation(last_image_path, image_path, overlap=True,
                                                 confirm_callback=on_comparison_confirmed,
-                                                not_in_sequence_callback=on_not_in_sequence_confirmed)
+                                                not_in_sequence_callback=on_not_in_sequence_confirmed,
+                                                show_next_callback=on_show_next)
 
                 return seq_num, 'precedes'
     if images_in_sequence == False:
@@ -368,8 +369,9 @@ def filter_text_above_threshold(ocr_results, y_threshold):
 
     return filtered_results
 
-def ocr_image(filename):
-    raw_path = filename.replace('\\', '\\\\')
+def ocr_image(filename, image_folder):
+    filename_with_path = os.path.join(image_folder, filename)
+    raw_path = filename_with_path.replace('\\', '\\\\')
     print('OCR being performed on', filename)
     #img = cv2.imread(raw_path)
     #if img is None:
@@ -380,48 +382,398 @@ def ocr_image(filename):
     # Perform OCR
     result = reader.readtext(raw_path)
     print('result:',result)
-    filtered_ocr_results = filter_text_above_threshold(result, 214)
-    detected_text = ' '.join([text[1] for text in filtered_ocr_results])
-    print('detected_text:', detected_text)
+    return result
 
-    # Create new Snippet instance
-    #Snippet.objects.create(filename=filename, text=detected_text)
-    #print(f'Processed image: {filename}')
+def is_valid_24_hour_time(time_string):
+    # Regular expression for matching 24-hour time format (HH:MM)
+    cleaned_time_string = time_string.replace('.', ':')
+
+    pattern = r'^([01]?[0-9]|2[0-3]):([0-5][0-9])$'
+    result = bool(re.match(pattern, cleaned_time_string))
+
+    print('Tested',time_string,'. Is a time?',result)
+
+    if result == True:
+        returned_text = cleaned_time_string
+    else:
+        returned_text = time_string
+
+    if len(time_string) <4:
+        print('= text =: =',time_string,'=')
+        pattern = r'^[0-2][0-9]:'
+        if bool(re.match(pattern, time_string[:3])):
+            # we probably have a partial time_string.
+            returned_text = ""
+            result = True
+    # Using regex to match the pattern with the input string
+    return returned_text, result
+
+def read_dow(text):
+    # Function to determine which day of the week is being communicated in the text box.
+    text_start = text[:3]
+    if text_start == "Mon":
+        dow = '1'
+    elif text_start == "Tue":
+        dow = '2'
+    elif text_start == "Wed":
+        dow = '3'
+    elif text_start == "Thu":
+        dow = '4'
+    elif text_start == "Fri":
+        dow = '5'
+    elif text_start == "Sat":
+        dow = '6'
+    elif text_start == "Sun":
+        dow = '7'
+    else:
+        dow = None
+    print('Tested', text, 'as a day of week. DOW=',dow)
+    return dow
+
+def add_sentences(new_snippet, sentence_results, filename):
+    # Loop through each sentence found in the image and create a sentence in the database.
+    print('Looping through OCR text to create sentences...')
+    new_setence = False
+    sequence = 0
+    most_recent_time = None
+    sentence_text = ""
+    min_confidence = 1
+    speaker = None
+    for bounding_box, text, confidence in sentence_results:
+        print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence)
+        # Determine the type of text box based on location:
+        # text is formatted as a time = time
+        # (x1 + x2) is between 740 and 760 = Day of week
+        # x1 > 150 = Dainis
+        # x1 < 50 = Dacīte
+
+        # First check if this looks like a date.
+        text, text_as_time = is_valid_24_hour_time(text)
+        centerpoint = (bounding_box[0][0] + bounding_box[1][0]) / 2
+        print('centerpoint:',centerpoint)
+        if text_as_time == True:
+            # This text box is a timestamp for a sentence.
+            # Check if there is text for a sentence to save
+            if len(sentence_text) > 0:
+                # We have some text for a sentence, so need to save it with the time.
+                # Compute average confidence of the scanned text.
+                print('Creating sentence with time',text,'. Sentence:',sentence_text)
+                most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
+                                                               sequence=sequence, confidence=min_confidence)
+                if text != "":
+                    most_recent_sentence.time = text
+                    most_recent_sentence.save()
+                    most_recent_time = text
+                sequence += 1
+                sentence_text = ""
+                # most_recent_sentence.time = text
+                # most_recent_sentence.save()
+                speaker = None
+                min_confidence = 1
+            if new_snippet.first_time is None:
+                new_snippet.first_time = text
+                new_snippet.save()
+
+        # Is the text box located where a new day might be communicated?
+        # Look at x1 and x2 of the bounding box and determin if it is centered.
+        elif centerpoint > 370 and centerpoint < 380:
+            # textbox is centered.
+            print('Appears to be a centred textbox...')
+            day_of_week = read_dow(text)
+            new_snippet.weekday = day_of_week
+            new_snippet.save()
+        elif speaker is None:
+            if bounding_box[0][0] > 130:
+                print('Speaker: Dainis')
+                speaker = "1"
+            else:
+                print('Speaker: Dacīte')
+                speaker = "0"
+            sentence_text = text
+            if confidence < min_confidence:
+                min_confidence = confidence
+        elif speaker is not None:
+            sentence_text = sentence_text + ' ' + text
+            if confidence < min_confidence:
+                min_confidence = confidence
+            #else:
+            #    # This is the start of a new sentence and prior sentence has not been saved yet.
+            #    print('No time, but new speaker. Creating sentence:', sentence_text)
+            #    most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
+            #                                                       sequence=sequence, confidence=min_confidence)
+            #    sequence += 1
+            #    # Start a fresh sentence
+            #    sentence_text = text
+            #    min_confidence = confidence
+            #    speaker = "1"
+        #elif bounding_box[0][0] < 70:
+        #    print('Speaker: Dacīte')
+        #    if speaker is None or speaker == "0":
+        #        if len(sentence_text) > 0:
+        #            sentence_text = sentence_text + ' ' + text
+        #        else:
+        #            sentence_text = text
+        #        speaker = "0"
+                # Check if this text has lower confidence
+        #        if confidence < min_confidence:
+        #            min_confidence = confidence
+        #    else:
+        #        # This is the start of a new sentence and prior sentence has not been saved yet.
+        #        print('No time, but new speaker. Creating sentence:', sentence_text)
+        #        most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
+        #                                                           sequence=sequence, confidence=min_confidence)
+        #        sequence += 1
+        #        # Start a fresh sentence
+        #        sentence_text = text
+        #        min_confidence = confidence
+        #        speaker = "0"
+        else:
+            print('Text box did not match any expected positions.')
+    # Have completed looping through scanned text.
+    # If sentence_text is not None, then there is unsaved sentence that needs to be saved.
+    if len(sentence_text) > 0:
+        most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet, sequence=sequence,
+                                                   confidence=min_confidence)
+    new_snippet.last_time = most_recent_time
+    new_snippet.save()
     return
 
+def recompute_sequences():
+    first_snippet_filenames = list(Snippet.objects.filter(place=1).values_list('filename', flat=True))
 
+    # Get the largest place value for each segment
+    max_place_per_segment = Snippet.objects.values('segment').annotate(max_place=Max('place'))
+
+    # Iterate over the results to get the corresponding filename for each max place in each segment
+    last_snippet_filenames = []
+    for entry in max_place_per_segment:
+        segment_id = entry['segment']
+        max_place = entry['max_place']
+        filename = Snippet.objects.filter(segment_id=segment_id, place=max_place).values_list('filename',
+                                                                                              flat=True).first()
+        if filename:
+            last_snippet_filenames.append(filename)
+    return first_snippet_filenames, last_snippet_filenames
+
+
+def start_new_segment(new_snippet):
+    segment_for_snippet = Segment.objects.create(length=1)
+    new_snippet.segment = segment_for_snippet
+    new_snippet.place = 1
+    new_snippet.save()
+    return new_snippet
 
 # Main logic
+delete_all=True
+if delete_all:
+    # Delete existing records:
+    input('You really want to delete all records? Press Enter to continue.')
+    deletable_instances=Sentence.objects.all()
+    deletable_instances.delete()
+    deletable_instances = UserSnippet.objects.all()
+    deletable_instances.delete()
+    deletable_instances = SnippetOverlap.objects.all()
+    deletable_instances.delete()
+    deletable_instances = Snippet.objects.all()
+    deletable_instances.delete()
+    deletable_instances = Segment.objects.all()
+    deletable_instances.delete()
+
+    print('Deleted all existing records.')
+
+
+
 image_folder = "C:\\Users\\db533\\OneDrive\\Koris\\Dacite-Dainis"
-#csv_file_path = 'confirmed_sequences.csv'  # Path to your CSV file
-#confirmed_sequences = load_confirmed_sequences_from_csv(csv_file_path)
 print('Creating list of images to process')
-image_files_with_path = [(os.path.join(image_folder, filename), os.path.getmtime(os.path.join(image_folder, filename)))
-               for filename in os.listdir(image_folder) if filename.endswith(".png")]
+#image_files_with_path = [(os.path.join(image_folder, filename), os.path.getmtime(os.path.join(image_folder, filename)))
+#               for filename in os.listdir(image_folder) if filename.endswith(".png")]
 image_files = [(filename)
                 for filename in os.listdir(image_folder) if filename.endswith(".png")]
-image_files_with_path_sorted = sorted(image_files_with_path, key=lambda x: x[1])
+#image_files_with_path_sorted = sorted(image_files_with_path, key=lambda x: x[1])
 image_files_sorted = sorted(image_files, key=lambda x: x[1])
 image_count = len(image_files)
-
-
 
 # User interaction loop
 #sequence_number = len(confirmed_sequences) + 1
 i = 0
 while i < len(image_files_sorted) - 1:
+    # Update the first and last image names for each sequence.
+    first_snippet_filenames, last_snippet_filenames = recompute_sequences()
     # Check if the image already is processed as a snippet in the database
     filename = image_files_sorted[i]
-    filname_with_path = image_files_with_path_sorted[i][0]
 
-    #all_snippets = Snippet.objects.filter().all()
-    #for snippet in all_snippets:
-    #    print(snippet)
-    ocr_image(filname_with_path)
+    #ocr_image(filname, image_folder)
 
     if not Snippet.objects.filter(filename=filename).exists():
         print('filename:',filename,'Snippet does not exist.')
+        new_snippet = Snippet.objects.create(place=1, filename=filename)
 
+        # If we have no snippets saved, save it without attempting to visually sequence it.
+        if Snippet.objects.count() == 0:
+            if Segment.objects.count() == 0:
+                # No segment exists, so create the first segment.
+                segment_for_snippet = Segment.objects.create(length=1)
+            else:
+                # Some segments exist in the database, so link the first snippet to the first segemnt
+                segment_for_snippet = Segment.objects.get(id=1)
+            #new_snippet = Snippet.objects.create(place=1, segment=segment_for_snippet, filename=filename)
+            new_snippet.segment = segment_for_snippet
+        else:
+            # There is at least 1 snippet already saved in at least 1 segment, so need to look for sequencing vs these snippets.
+            best_overlap_row_count = 0
+            overlaps_with_filename = []
+            other_image_position = []
+            count_matching_overlap_row_count=0
+            # first try to match to the end of existing segments.
+            for last_filename in last_snippet_filenames:
+                assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
+                matching_row_count=find_matching_rows(last_filename, filename)
+                # Save the overlap to the database.
+                SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
+                                              overlaprowcount=matching_row_count)
+                if matching_row_count > best_overlap_row_count:
+                    count_matching_overlap_row_count = 1
+                    best_overlap_row_count = matching_row_count
+                    overlaps_with_filename = [last_filename]
+                    other_image_position = ['prior']
+                elif matching_row_count == best_overlap_row_count:
+                    count_matching_overlap_row_count +=1
+                    overlaps_with_filename.append(last_filename)
+                    other_image_position.append['prior']
+
+            # then try to match to the start of existing segments.
+            for first_filename in first_snippet_filenames:
+                assumed_next_snippet = Snippet.objects.get(filename=first_filename)
+                matching_row_count=find_matching_rows(filename, first_filename)
+                # Save the overlap to the database.
+                SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
+                                              overlaprowcount=matching_row_count)
+                if matching_row_count > best_overlap_row_count:
+                    count_matching_overlap_row_count = 1
+                    best_overlap_row_count = matching_row_count
+                    overlaps_with_filename = [first_filename]
+                    other_image_position = ['next']
+                elif matching_row_count == best_overlap_row_count:
+                    count_matching_overlap_row_count +=1
+                    overlaps_with_filename.append(first_filename)
+                    other_image_position.append['next']
+
+            if count_matching_overlap_row_count > 1:
+                # More than one snippet has the same number of overlapping rows. Need to visually compare to determine if any sequence should be determined.
+                # Might be no overlapping rows.
+                # First reset flag to indicate that should skip to next pair.
+                global show_next, awaiting_user_feedback
+                show_next = True
+                # Loop through each possible sequence of best matching images.
+                print('Visual comparison of',count_matching_overlap_row_count,'images needed for confirming sequence.')
+                i = 0
+                while True:
+                    overlapping_filename = overlaps_with_filename[i]
+                    overlap_sequence = other_image_position[i]
+                    linked_snippet_instance = Snippet.objects.get(filename=overlapping_filename)  # Replace snippet_id with the actual id of the snippet
+                    linked_segment_instance = linked_snippet_instance.segment
+                    print('i:',i,'overlapping_filename:',overlapping_filename, 'overlap_sequence:',overlap_sequence)
+                    if overlap_sequence == 'prior':
+                        image1_time = linked_snippet_instance.last_time
+                        image2_time = new_snippet.first_time
+                        sequence_correct = image1_time <= image2_time
+                        print('Last time on first image:',image1_time, 'First time on second image:', image2_time, 'Sequence correct?',sequence_correct)
+                        display_images_for_confirmation(overlapping_filename, filename, overlap=True,
+                                                confirm_callback=on_comparison_confirmed,
+                                                not_in_sequence_callback=on_not_in_sequence_confirmed,
+                                                show_next_callback=on_show_next)
+                    else:
+                        image1_time = new_snippet.last_time
+                        image2_time = linked_snippet_instance.first_time
+                        sequence_correct = image1_time <= image2_time
+                        print('Last time on first image:',image1_time, 'First time on second image:', image2_time, 'Sequence correct?',sequence_correct)
+                        display_images_for_confirmation(filename, overlapping_filename, overlap=True,
+                                                        confirm_callback=on_comparison_confirmed,
+                                                        not_in_sequence_callback=on_not_in_sequence_confirmed,
+                                                show_next_callback=on_show_next)
+                    print('Awaiting user feedback...')
+                    while awaiting_user_feedback == True:
+                        pass
+                    if show_next == True:
+                        # User asked to cycle to the next image for comparison.
+                        i+=1
+                        # Check if all viable matches have been shown, if so, start at the beginning.
+                        if i == len(overlaps_with_filename):
+                            i=0
+                    elif images_in_sequence == False:
+                        # User is has indicated that this is not a valid sequence.
+                        # drop the filename from the list of viable sequences.
+                        overlaps_with_filename.pop(i)
+                        other_image_position.pop(i)
+                        if len(overlaps_with_filename) == 0:
+                            # All potential sequences have been rejected. Save the snippet as a new, separate segment.
+                            new_snippet = start_new_segment(new_snippet)
+                            break
+
+                    elif images_in_sequence == True:
+                        # User confirms this is a valid sequence.
+                        if overlap_sequence == "prior":
+                            # The new image is the final image in an existing segment.
+                            # Find the maximum place value for Snippets connected to this segment.
+                            max_place = Snippet.objects.filter(segment=linked_segment_instance).aggregate(Max('place'))
+
+                            # Extracting the maximum value
+                            max_place_value = max_place['place__max']
+
+                            # Set the place to be +1 to this max value.
+                            new_snippet.place = max_place_value+1
+                            new_snippet.segment=segment_instance
+                        else:
+                            # The new image is the first in an existing sequence.
+                            # Need to update the place values for all existing snippets mapped to this segment.
+                            existing_snippets = Snippet.objects.filter(segment=linked_segment_instance)
+                            for existing_snippet in existing_snippets:
+                                existing_snippet.place = existing_snippet.place + 1
+                                existing_snippet.save()
+                            new_snippet.place = 1
+                            new_snippet.segment = segment_instance
+                        new_snippet.save()
+                        break
+
+                    # Highlight if sequence of times for messages suggests correct sequence or wrong sequence.
+                    # Buttons "Show next" or "Not in sequence" or "Correct sequence"
+                # If one sequence is confirmed, update the segment and place values to include the new image in the chosen sequence.
+                # If no seqeunce is confirmed i.e. all pairs are ruled out, then create a new segment for this image.
+                pass
+            else:
+                # One snippet pair has a higher number of matching rows in the images.
+                # update the segment and place values to include the new image in the chosen sequence.
+                if best_overlap_row_count <4:
+                    # Too few rows to be a significant image overlap
+                    #new_snippet = Snippet.objects.create(place=1, filename=filename)     # Move to earlier part of loop
+                    new_snippet = start_new_segment(new_snippet)
+                else:
+                    # Sufficient rows match.
+                    other_snippet = Snippet.objects.get(filename=overlaps_with_filename[0])  # Replace snippet_id with the actual id of the snippet
+                    segment_for_other_snippet = other_snippet.segment
+                    if other_image_position[0] == "prior":
+                        # The image that was compared comes before this new image. The new image is at the end of the sequence.
+                        # Get the place of the compared image.
+                        last_place = other_snippet.place
+                        #new_snippet = Snippet.objects.create(place=int(last_place)+1, segment=segment_for_other_snippet, filename=filename)
+                        new_snippet.place = int(last_place)+1
+                        new_snippet.segment = segment_for_other_snippet
+                        new_snippet.save()
+                    else:
+                        # The new image needs to be placed before the image that it was compared to.
+                        # Get all existing snippets for this segment.
+                        existing_snippets = Snippet.objects.filter(segment=segment_for_other_snippet)
+                        for existing_snippet in existing_snippets:
+                            existing_snippet.place = existing_snippet.place + 1
+                            existing_snippet.save()
+                        #new_snippet = Snippet.objects.create(place=1, segment=segment_for_other_snippet, filename=filename)
+                        new_snippet.place = 1
+                        new_snippet.segment = segment_for_other_snippet
+                        new_snippet.save()
+        # Read the text on the image
+        ocr_result = ocr_image(filename, image_folder)
+        sentence_results = filter_text_above_threshold(ocr_result, 118)
+        add_sentences(new_snippet, sentence_results, filename)
     else:
         print('filename:',filename,'Snippet exists.')
     i += 1
@@ -433,7 +785,8 @@ while i < len(image_files_sorted) - 1:
         overlap_height = find_matching_rows(last_image_path, next_image_path)
         if overlap_height >3:
             images_in_sequence = True
-        display_images_for_confirmation(last_image_path, next_image_path, overlap=True, confirm_callback=on_comparison_confirmed, not_in_sequence_callback=on_not_in_sequence_confirmed)
+        display_images_for_confirmation(last_image_path, next_image_path, overlap=True, confirm_callback=on_comparison_confirmed, not_in_sequence_callback=on_not_in_sequence_confirmed,
+                                                show_next_callback=on_show_next)
         if images_in_sequence == False:
             # Automatically compare the image with the beginning and end of each sequence
             matching_sequence, position = find_matching_sequence(last_image_path, confirmed_sequences, sequence_number)
@@ -462,5 +815,3 @@ while i < len(image_files_sorted) - 1:
         if i == len(image_files_sorted) - 1:
             # Logic to handle the last image
             pass
-
-# No stitching and saving to a single image file in this version, since we're handling sequences
