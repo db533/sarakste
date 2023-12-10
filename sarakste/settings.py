@@ -160,11 +160,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = '/sarakste_app/static/'
+
 # Define the directory where static files will be collected during deployment
+STATIC_URL = '/sarakste_app/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Adjust the path as needed
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'sarakste_app', 'static'),
+os.path.join(BASE_DIR, 'sarakste_app', 'static'),
 ]
 
 # Default primary key field type

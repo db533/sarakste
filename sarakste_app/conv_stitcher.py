@@ -10,6 +10,8 @@ from django.conf import settings
 sys.path.append('C:\\Users\\db533\\PycharmProjects\\sarakste\\sarakste\\sarakste')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sarakste.settings')  # Replace with your project's settings
 django.setup()
+delete_all=True
+delete_overlaps = True
 
 import environ
 from django.conf import settings
@@ -58,8 +60,8 @@ def find_matching_rows(earlier_image, later_image):
 
     earlier_image = Image.open(os.path.join(image_folder, earlier_image))
     later_image = Image.open(os.path.join(image_folder, later_image))
-    earlier_image.show()
-    later_image.show()
+    #earlier_image.show()
+    #later_image.show()
 
     earlier_height = earlier_image.height
     #print('earlier_height:',earlier_height)
@@ -129,7 +131,9 @@ def find_matching_rows(earlier_image, later_image):
             #print('Rows matched:', later_segment.height)
         else:
             break
-    best_matched_segment.show()
+    if best_match_rows == 15 or best_match_rows == 85:
+        best_matched_segment.show()
+        pass
     print('best_match_rows:', best_match_rows, 'best_match_score:',best_match_score)
     return best_match_rows
 
@@ -564,7 +568,6 @@ def start_new_segment(new_snippet):
     return new_snippet
 
 # Main logic
-delete_all=True
 if delete_all:
     # Delete existing records:
     input('You really want to delete all records? Press Enter to continue.')
@@ -578,9 +581,12 @@ if delete_all:
     deletable_instances.delete()
     deletable_instances = Segment.objects.all()
     deletable_instances.delete()
-
     print('Deleted all existing records.')
 
+elif delete_overlaps == True:
+    deletable_instances = SnippetOverlap.objects.all()
+    deletable_instances.delete()
+    print('Deleted SnippetOverlap records.')
 
 
 image_folder = "C:\\Users\\db533\\OneDrive\\Koris\\Dacite-Dainis"
@@ -607,6 +613,11 @@ while i < len(image_files_sorted) - 1:
     if not Snippet.objects.filter(filename=filename).exists():
         print('filename:',filename,'Snippet does not exist.')
         new_snippet = Snippet.objects.create(place=1, filename=filename)
+
+        # Read the text on the image
+        ocr_result = ocr_image(filename, image_folder)
+        sentence_results = filter_text_above_threshold(ocr_result, 118)
+        add_sentences(new_snippet, sentence_results, filename)
 
         # If we have no snippets saved, save it without attempting to visually sequence it.
         if Snippet.objects.count() == 0:
@@ -770,10 +781,6 @@ while i < len(image_files_sorted) - 1:
                         new_snippet.place = 1
                         new_snippet.segment = segment_for_other_snippet
                         new_snippet.save()
-        # Read the text on the image
-        ocr_result = ocr_image(filename, image_folder)
-        sentence_results = filter_text_above_threshold(ocr_result, 118)
-        add_sentences(new_snippet, sentence_results, filename)
     else:
         print('filename:',filename,'Snippet exists.')
     i += 1
