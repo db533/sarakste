@@ -810,6 +810,8 @@ while i < len(image_files_sorted) - 1:
                                 # Set the place to be +1 to this max value.
                                 new_snippet.place = max_place_value+1
                                 new_snippet.segment=segment_instance
+                                segment_instance.length +=  1
+                                segment_instance.save()
 
                             else:
                                 # The new image is the first in an existing sequence.
@@ -822,6 +824,8 @@ while i < len(image_files_sorted) - 1:
                                 new_snippet.place = 1
                                 new_snippet.segment = segment_instance
                             new_snippet.save()
+                            segment_instance.length += 1
+                            segment_instance.save()
                             break
 
                         # Highlight if sequence of times for messages suggests correct sequence or wrong sequence.
@@ -866,6 +870,8 @@ while i < len(image_files_sorted) - 1:
                         #new_snippet = Snippet.objects.create(place=int(last_place)+1, segment=segment_for_other_snippet, filename=filename)
                         new_snippet.place = int(last_place)+1
                         new_snippet.segment = segment_for_other_snippet
+                        segment_for_other_snippet.length += 1
+                        segment_for_other_snippet.save()
                     else:
                         # The new image needs to be placed before the image that it was compared to.
                         # Get all existing snippets for this segment.
@@ -877,6 +883,8 @@ while i < len(image_files_sorted) - 1:
                         #new_snippet = Snippet.objects.create(place=1, segment=segment_for_other_snippet, filename=filename)
                         new_snippet.place = 1
                         new_snippet.segment = segment_for_other_snippet
+                        segment_for_other_snippet.length += 1
+                        segment_for_other_snippet.save()
                 else:
                     # Multiple images have matching row count.
                     if count_in_current_segment == 0:

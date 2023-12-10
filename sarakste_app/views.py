@@ -80,6 +80,26 @@ def display_snippets(request):
             user_snippet2.marked = 'marked2' in request.POST
             user_snippet2.save()
 
+        if 'combine' in request.POST:
+            # User has indicated that these segments need to be combined.
+            # Get the segment of the 2nd snippet.
+            donating_segment = snippet2.segment
+            receiving_segment = snippet1.segment
+            receiving_segment_max_place = Snippet.objects.filter(segment_id=receiving_segment).aggregate(Max('place'))['place__max']
+
+            # Retrieve the snippets that are linked to the Segment in ascending place order.
+            donatable_snippets = Snippet.objects.filter(segment=donating_segment) .order_by('place')
+            # Change the segment to 1st snippet's segment and adjust the place to be after the final image.
+            for donated_snippet in donatable_snippets:
+                donated_snippet.segment = receiving_segment
+                donated_snippet.place = donated_snippet.place + receiving_segment_max_place
+                donated_snippet.save()
+                receiving_segment.length += 1
+            receiving_segment.save()
+            donating_segment.delete()
+
+
+
         # Look for modifications to Sentences and update the Sentence instances.
         for key, value in request.POST.items():
             if key.startswith('sentence_id_'):
@@ -173,6 +193,8 @@ def display_snippets(request):
     is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(
         place1)
     is_first_place_snippet2 = int(place2) == 1
+
+
 
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
