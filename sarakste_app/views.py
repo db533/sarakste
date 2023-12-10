@@ -169,6 +169,11 @@ def display_snippets(request):
         top_overlaps_as_first_snippet2 = []
         top_overlaps_as_second_snippet2 = []
 
+    # Check if snippet1's place is the last in its segment and snippet2's place is 1
+    is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(
+        place1)
+    is_first_place_snippet2 = int(place2) == 1
+
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
         'user_snippet1': user_snippet1,'user_snippet2': user_snippet2,
@@ -188,6 +193,7 @@ def display_snippets(request):
         'top_overlaps_as_second_snippet1': top_overlaps_as_second_snippet1,
         'top_overlaps_as_first_snippet2': top_overlaps_as_first_snippet2,
         'top_overlaps_as_second_snippet2': top_overlaps_as_second_snippet2,
+        'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
     }
 
     return render(request, 'snippets_display.html', context)

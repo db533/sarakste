@@ -39,18 +39,14 @@
                     <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
                 {% endif %}
             </td>
+            {% if show_combine_checkbox %}
+            <td>
+                <input type="checkbox" name="combine" id="combine">
+                <label for="combine">Combine</label>
+                </td>
+            </td>
+            {% endif %}
 
-        </tr>
-        <tr>
-            <!-- Checkboxes for loved field -->
-            <td>
-                Mīlēts?
-                <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
-            </td>
-            <td>
-                Mīlēts?
-                <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
-            </td>
         </tr>
         <tr>
             <!-- Checkboxes for marked field -->
@@ -149,6 +145,18 @@
                 {% endif %}
             </td>
         </tr>
+        <tr>
+            <!-- Checkboxes for loved field -->
+            <td>
+                Mīlēts?
+                <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
+            </td>
+            <td>
+                Mīlēts?
+                <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
+            </td>
+        </tr>
+
         <tr>
             <td>
             <!-- Radio buttons for existing summaries for snippet1 -->

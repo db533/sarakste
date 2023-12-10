@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+update_local_database = False
+
 from pathlib import Path
 import environ
 import os
@@ -27,19 +29,20 @@ RUN_REMOTE = env.bool('RUN_REMOTE', default=False)
 print('RUN_REMOTE:',RUN_REMOTE)
 REMOTE_IP = env.str('REMOTE_IP')
 
-if HOSTED:
-    if RUN_REMOTE == True:
-        host_ip = '212.7.207.88'
-    else:
-        host_ip = IP
-    db_name = env.str('MYSQL_PROD_DB_NAME')
-    db_user = env.str('MYSQL_PROD_DB_USER')
-    db_pwd = env.str('MYSQL_PROD_PWD')
-else:
+if update_local_database == True:
+    host_ip = IP
     host_ip = '127.0.0.1'
     db_name = env.str('MYSQL_LOCAL_DB_NAME')
     db_user = env.str('MYSQL_LOCAL_DB_USER')
     db_pwd = env.str('MYSQL_LOCAL_PWD')
+    SECRET_KEY = 'django-insecure-0fe6tyuu9ztxq(gmo!d6c#86$o_91hfj799nu6cgwy0*gqlnl2'
+else:
+    host_ip = '212.7.207.88'
+    db_name = env.str('MYSQL_PROD_DB_NAME')
+    db_user = env.str('MYSQL_PROD_DB_USER')
+    db_pwd = env.str('MYSQL_PROD_PWD')
+    # SECURITY WARNING: keep the secret key used in production secret!
+    SECRET_KEY = env.str('django_secret_key')
 
 print('host_ip:',host_ip)
 print('db_name:',db_name)
@@ -50,12 +53,9 @@ print('db_pwd:',db_pwd)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0fe6tyuu9ztxq(gmo!d6c#86$o_91hfj799nu6cgwy0*gqlnl2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
