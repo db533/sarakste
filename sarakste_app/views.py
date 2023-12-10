@@ -80,6 +80,27 @@ def display_snippets(request):
             user_snippet2.marked = 'marked2' in request.POST
             user_snippet2.save()
 
+        # Look for modifications to Sentences and update the Sentence instances.
+        for key, value in request.POST.items():
+            if key.startswith('sentence_id_'):
+                sentence_id = value
+                sentence_text = request.POST.get(f'sentence_text_{sentence_id}', '').strip()
+                Sentence.objects.filter(id=sentence_id).update(text=sentence_text)
+            if key.startswith('delete_sentence_'):
+                sentence_id = key.split('_')[-1]
+                try:
+                    sentence_to_delete = Sentence.objects.get(id=sentence_id)
+                    sentence_to_delete.delete()
+                except Sentence.DoesNotExist:
+                    pass  # Handle the case where the sentence does not exist
+
+        # Redirect to the same page to display updated content
+        #return redirect('display_snippets')
+        if snippet1 is not None:
+            snippet1.save()
+        if snippet2 is not None:
+            snippet2.save()
+
         if 'combine' in request.POST:
             # User has indicated that these segments need to be combined.
             # Get the segment of the 2nd snippet.
@@ -97,30 +118,10 @@ def display_snippets(request):
                 receiving_segment.length += 1
             receiving_segment.save()
             donating_segment.delete()
+            place2 = place1 + 1
+            return redirect(
+                f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
 
-
-
-        # Look for modifications to Sentences and update the Sentence instances.
-        for key, value in request.POST.items():
-            if key.startswith('sentence_id_'):
-                sentence_id = value
-                sentence_text = request.POST.get(f'sentence_text_{sentence_id}', '').strip()
-                Sentence.objects.filter(id=sentence_id).update(text=sentence_text)
-            if key.startswith('delete_sentence_'):
-                sentence_id = key.split('_')[-1]
-                try:
-                    sentence_to_delete = Sentence.objects.get(id=sentence_id)
-                    sentence_to_delete.delete()
-                except Sentence.DoesNotExist:
-                    pass  # Handle the case where the sentence does not exist
-
-        # Redirect to the same page to display updated content
-        #return redirect('display_snippets')
-
-        if snippet1 is not None:
-            snippet1.save()
-        if snippet2 is not None:
-            snippet2.save()
         return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
