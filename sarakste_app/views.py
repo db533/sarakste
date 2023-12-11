@@ -136,7 +136,7 @@ def display_snippets(request):
                 receiving_segment.length += 1
             receiving_segment.save()
             donating_segment.delete()
-            place2 = place1 + 1
+            place2 = int(place1) + 1
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
 
