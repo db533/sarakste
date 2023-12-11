@@ -101,6 +101,22 @@ def display_snippets(request):
         if snippet2 is not None:
             snippet2.save()
 
+        if 'split' in request.POST:
+            # User has indicated that these 2 snippets are not in sequence and the segment should eb split into 2 segments.
+            # Create a new segment.
+            new_segment = Segment.objects.create(length=0)
+            last_place_left = snippet1.place  # This will be the place value that is last to remain in the orignial segment.
+            donatable_snippets = Snippet.objects.filter(segment=snippet1.segment).order_by('place')
+            new_place_counter = 1
+            for donated_snippet in donatable_snippets:
+                if donated_snippet.place > last_place_left:
+                    donated_snippet.segment = new_segment
+                    donated_snippet.place = new_place_counter
+                    donated_snippet.save()
+                    new_place_counter += 1
+            new_segment.length = new_place_counter
+            new_segment.save()
+
         if 'combine' in request.POST:
             # User has indicated that these segments need to be combined.
             # Get the segment of the 2nd snippet.
@@ -195,7 +211,12 @@ def display_snippets(request):
         place1)
     is_first_place_snippet2 = int(place2) == 1
 
-
+    # Check if snippet1 and 2 are in the same segment and are consequetive place number.
+    if snippet1 is not None and snippet2 is not None:
+        show_split_checkbox = (snippet1.segment == snippet2.segment)
+        show_split_checkbox = show_split_checkbox and (snippet2.place - snippet1.place == 1)
+    else:
+        show_split_checkbox = False
 
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
@@ -217,6 +238,7 @@ def display_snippets(request):
         'top_overlaps_as_first_snippet2': top_overlaps_as_first_snippet2,
         'top_overlaps_as_second_snippet2': top_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
+        'show_split_checkbox': show_split_checkbox,
     }
 
     return render(request, 'snippets_display.html', context)
