@@ -29,8 +29,10 @@ print('RUN_REMOTE:',RUN_REMOTE)
 REMOTE_IP = env.str('REMOTE_IP')
 
 if update_local_database == True:
-    host_ip = IP
-    host_ip = '127.0.0.1'
+    if HOSTED == True:
+        host_ip = IP
+    else:
+        host_ip = '127.0.0.1'
     db_name = env.str('MYSQL_LOCAL_DB_NAME')
     db_user = env.str('MYSQL_LOCAL_DB_USER')
     db_pwd = env.str('MYSQL_LOCAL_PWD')
