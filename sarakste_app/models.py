@@ -89,6 +89,8 @@ class SnippetOverlap(models.Model):
     first_snippet = models.ForeignKey(Snippet, related_name='current_overlaps', on_delete=models.CASCADE, help_text='The first snippet in the comparison.')
     second_snippet = models.ForeignKey(Snippet, related_name='overlapping_snippets', on_delete=models.CASCADE, help_text='The second snippet int he comparison.')
     overlaprowcount = models.IntegerField(default=0, help_text='The number of rows from this image that overlap on the next image.')
+    mse_score = models.DecimalField(max_digits=10, decimal_places=1, null=True)
+    ssim_score = models.DecimalField(max_digits=6, decimal_places=4, null=True)
 
     def __str__(self):
         return f"{self.current_snippet.filename} overlaps {self.overlapping_snippet.filename}: {self.overlaprowcount} rows"

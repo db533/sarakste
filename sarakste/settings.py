@@ -10,8 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-update_local_database = False
-
 from pathlib import Path
 import environ
 import os
@@ -22,6 +20,7 @@ environ.Env.read_env(overwrite=True)
 DEBUG = env.bool('debug', default=False)
 import socket
 hostname = socket.gethostname()
+update_local_database = env.bool('update_local_database', default=False)
 IP = socket.gethostbyname(hostname)
 HOSTED = env.bool('HOSTED', default=False)
 print('HOSTED:',HOSTED)

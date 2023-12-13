@@ -6,6 +6,9 @@ from django.db.models import Max
 import re
 from django.db.models import Q
 from datetime import datetime
+import cv2
+import numpy as np
+from skimage.metrics import structural_similarity as compare_ssim
 
 from django.conf import settings
 # Configure Django settings
@@ -47,14 +50,120 @@ else:
     db_user = env.str('MYSQL_LOCAL_DB_USER')
     db_pwd = env.str('MYSQL_LOCAL_PWD')
 
-import csv
 import tkinter as tk
 from tkinter import Toplevel  # Add this line to import Toplevel
 from PIL import Image, ImageTk, ImageChops, ImageStat
 import os
 import time
 
-def find_matching_rows(earlier_image, later_image):
+# Function to convert hex code to BGR color format
+def hex_to_bgr(hex_code):
+    # Remove the '#' character if it's present
+    hex_code = hex_code.lstrip('#')
+    # Convert the hex code to an integer
+    hex_int = int(hex_code, 16)
+    # Extract the B, G, and R components
+    b = (hex_int >> 16) & 255
+    g = (hex_int >> 8) & 255
+    r = hex_int & 255
+    return (b, g, r)
+
+# Define specific colors in hex format
+speaker_color1_hex = "#DCF8C6"  # Light Green
+speaker_color2_hex = "#F8F8F8"  # Whitish
+
+speaker_color1 = hex_to_bgr(speaker_color1_hex)
+speaker_color2 = hex_to_bgr(speaker_color2_hex)
+
+# Function to calculate the quantity of pixels that match a specific color
+def count_matching_color_pixels(image, color):
+    lower_bound = np.array(color) - np.array([10, 10, 10])  # Tolerance for color matching
+    upper_bound = np.array(color) + np.array([10, 10, 10])
+    mask = cv2.inRange(image, lower_bound, upper_bound)
+    return np.sum(mask > 0)
+
+def update_best_row_records(mse, ssim, top_row, later_segment_height, five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, initial_row_matching):
+    if best_match_count < 5 and initial_row_matching == True:
+        # Since fewer than 5 rows have been added to best row list, add this one too.
+        five_best_row.append(top_row)
+        mse_for_best_rows[top_row]=[mse]
+        ssim_for_best_rows[top_row] = [ssim]
+        best_match_count +=1
+        top_five_row = True
+    else:
+        # Need to check if an existing row should be pushed out.
+        initial_row_matching = False
+        if later_segment_height < 7:
+            # Comparison is done using mse
+            # Get the most recent mse values for all 5 rows.
+            worst_mse = 0
+            worst_row_number = None
+            for key, value in mse_for_best_rows.items():
+                if value[-1] > worst_mse:
+                    worst_row_number = key
+                    worst_mse = value[-1]
+            if mse < worst_mse:
+                # Remove the mse records for this row
+                mse_for_best_rows.pop(worst_row_number)
+                ssim_for_best_rows.pop(worst_row_number)
+                # Remove the row from the list of best rows.
+                five_best_row.remove(worst_row_number)
+                # Add in this row as it has a better mse score.
+                if top_row not in five_best_row:
+                    five_best_row.append(top_row)
+                    mse_for_best_rows[top_row] = [mse]
+                    ssim_for_best_rows[top_row] = [ssim]
+                else:
+                    # This tow is already in five_best_row so just append the new mse and ssim values.
+                    mse_for_best_rows[top_row].append(mse)
+                    ssim_for_best_rows[top_row].append(ssim)
+                top_five_row = True
+            elif top_row not in five_best_row:
+                top_five_row = False
+        else:
+            # Comparison is done with ssim
+            # Get the most recent ssim values for all 5 rows.
+            worst_ssim = 1  # Perfect score
+            worst_row_number = None
+            for key, value in ssim_for_best_rows.items():
+                if value[-1] < worst_ssim:
+                    worst_row_number = key
+                    worst_ssim = value[-1]
+            if ssim > worst_ssim:
+                # Remove the mse records for this row
+                ssim_for_best_rows.pop(worst_row_number)
+                # Remove the row from the list of best rows.
+                five_best_row.remove(worst_row_number)
+                if top_row not in five_best_row:
+                    five_best_row.append(top_row)
+                    mse_for_best_rows[top_row] = [mse]
+                    ssim_for_best_rows[top_row] = [ssim]
+                else:
+                    mse_for_best_rows[top_row].append(mse)
+                    ssim_for_best_rows[top_row].append(ssim)
+                top_five_row = True
+            elif ssim <= worst_mse and len(five_best_row) < 5:
+                top_five_row = False
+            else:
+                top_five_row = True
+            if top_row in five_best_row:
+                mse_for_best_rows[top_row].append(mse)
+                ssim_for_best_rows[top_row].append(ssim)
+    return five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, top_five_row, initial_row_matching
+
+def find_best_row(five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count):
+    # Function to find the row with the best ssim score
+    best_ssim = -1
+    best_row_counter = None
+    best_mse_sequence = None
+    for key, value in ssim_for_best_rows.items():
+        if value[-1] > best_ssim:
+            best_row_counter = key
+            best_ssim = value[-1]
+            best_mse_sequence = mse_for_best_rows[best_row_counter]
+    return best_row_counter, best_ssim, best_mse_sequence
+
+def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_score = 150):
     header_size = 130
     footer_size = 90
 
@@ -69,76 +178,133 @@ def find_matching_rows(earlier_image, later_image):
     #print('later_height:', later_height)
 
     feasible_rows = list(range(header_size, later_height - footer_size))
-    max_overlap = 0
-    best_match_score = 999999999
-    prior_match_score = best_match_score
 
+    five_best_row = []
+    mse_for_best_rows = {}
+    ssim_for_best_rows = {}
+    best_match_count=0
+    best_ssim_score = -1
+    initial_row_matching = True
+
+    #max_overlap = 0
+    #best_match_score = 999999999
+    #prior_match_score = best_match_score
+    #match_barrier = 999  # * (1.5 ** earlier_segment.height)
 
     for bottom_row in range(earlier_height - footer_size, footer_size-1, -1):  # Start from 90th row from bottom, up to the 90th row
         segment_displayed = False
         min_overlap = 999999999
         earlier_segment = earlier_image.crop((0, bottom_row, earlier_image.width, earlier_height-footer_size+1))
-        match_barrier = 10000 #* (1.5 ** earlier_segment.height)
+
         #print('match_barrier:',match_barrier)
         # Display the earlier_segment image
         #earlier_segment.show()
 
+        # Convert PIL Image objects to NumPy arrays
+        earlier_segment_np = np.array(earlier_segment)
+
+        # Calculate the quantity of pixels matching the specific colors
+        #earlier_segment_np_color1_count = count_matching_color_pixels(earlier_segment_np, speaker_color1)
+        #earlier_segment_np_color2_count = count_matching_color_pixels(earlier_segment_np, speaker_color2)
+
         if len(feasible_rows) > 0:
             for top_row in feasible_rows[:]:
                 later_segment_height = earlier_segment.height
-                #print('top_row + later_segment_height:', top_row + later_segment_height)
-                #print('later_height - footer_size:', later_height - footer_size)
-                #print('Later segment from row', top_row, 'to row', top_row + later_segment_height)
-                #if top_row + later_segment_height > later_height - footer_size:
-                #    feasible_rows.remove(top_row)
-                #    print('Dropped row',top_row)
-                #    continue
-
                 later_segment = later_image.crop((0, top_row, later_image.width, top_row + later_segment_height))
-                #print('later_segment.height:', later_segment.height)
-                #print('later_segment.width:', later_segment.width)
+
+                # Convert PIL Image objects to NumPy arrays
+                later_segment_np = np.array(later_segment)
+
+                # Calculate the quantity of pixels matching the specific colors
+                #later_segment_np_color1_count = count_matching_color_pixels(later_segment_np, speaker_color1)
+                #later_segment_np_color2_count = count_matching_color_pixels(later_segment_np, speaker_color2)
 
                 # Compare segments
-                match_score = is_match(earlier_segment, later_segment)/(later_segment_height)
-                if match_score < prior_match_score:
-                    best_matched_segment = later_segment
-                    best_match_rows = later_segment.height
-                    best_earlier_segment = earlier_segment
-                    best_later_segment = later_segment
-                if len(feasible_rows) < 5:
-                    print('Rows matched:', later_segment.height, 'match_score:',match_score, 'match_barrier:',match_barrier)
-                    if match_score < prior_match_score:
-                        best_match_score = match_score
-                        best_matched_segment = later_segment
-                        #best_matched_segment.show()
-                        #earlier_segment.show()
-                if match_score < match_barrier:
-                    #print('Found a matching segment!')
-                        #print('New lowest match_score', min_overlap)
-                    #if segment_displayed == False and later_segment.height > 30:
-                    #    earlier_segment.show()
-                    #    segment_displayed = True
-                    #print('match_score:',match_score)
-                    #print('Matching row count:', later_segment.height)
+                #match_score = is_match(earlier_segment, later_segment) / (later_segment_height)
+                mse, ssim = cv2_is_match(earlier_segment_np, later_segment_np,later_segment_height)
+                # Now update the records for the 5 best rows.
+                five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, top_five_row, initial_row_matching = update_best_row_records(mse, ssim, top_row, later_segment_height, five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, initial_row_matching)
+                print('Rows matched:', later_segment.height, 'mse:', mse, 'ssim:',ssim, 'top_five_row:', top_five_row)
+                print('five_best_row:',five_best_row,'mse_for_best_rows:',mse_for_best_rows,'ssim_for_best_rows',ssim_for_best_rows,'best_match_count:',best_match_count)
 
-                    #print('bottom_row:',bottom_row)
-                    #print('top_row:', top_row)
-                    max_overlap = max(max_overlap, later_segment_height)
-                    prior_match_score = match_score
-                else:
-                    #print('Dropping row',top_row)
+                if top_five_row == False and len(feasible_rows) > 5 or (ssim > -1 and ssim < 0.7 and len(feasible_rows) > 1):
                     feasible_rows.remove(top_row)
-                pass
+
+                if len(feasible_rows) == 1:
+                    print('1 feasible row...')
+                    break
+
+    #            ssim = 1-ssim # Normalise so that best score is 0. So ssim now ranges from 0 to 2. 2 is worst match.
+
+                #print('Rows matched:', later_segment.height, 'mse:', mse, 'ssim:',ssim, 'match_barrier:',match_barrier)
+    #            if later_segment_height == 7:
+                    # Reset the prior_match_score as now computing ssim.
+                    #best_earlier_segment.show()
+                    #best_later_segment.show()
+    #                prior_match_score = best_ssim_score
+    #                best_match_score = best_ssim_score
+    #            if later_segment_height > 6:
+    #                match_score = ssim
+    #            else:
+    #                match_score = (mse * 1)
+    #            if later_segment_height > 6 and best_ssim_score < 2:
+    #                match_barrier = min(best_ssim_score, best_match_score)  * 1.5
+                #elif best_mse_score < 150:
+                #    match_barrier = min(best_match_score, best_mse_score) * 1.5
+                #else:
+    #            match_barrier = min(best_match_score, best_mse_score) * 1.5
+
+                #match_score = (mse * 0.01) + (abs(ssim) * 1)
+    #            if match_score < prior_match_score:
+    #                best_matched_segment = later_segment
+    #                best_match_rows = later_segment.height
+    #                best_earlier_segment = earlier_segment
+    #                best_later_segment = later_segment
+                #if len(feasible_rows) < 5:
+                #print('Rows matched:', later_segment.height, 'total match_score:', match_score*later_segment_height,'match_score:',match_score, 'match_barrier:',match_barrier)
+    #            if match_score < prior_match_score:
+    #                best_match_score = match_score
+    #                best_matched_segment = later_segment
+                    #best_matched_segment.show()
+                    #earlier_segment.show()
+    #            if match_score < match_barrier:
+    #                max_overlap = max(max_overlap, later_segment_height)
+    #                prior_match_score = match_score
+    #            else:
+                    #print('Dropping row',top_row)
+    #                feasible_rows.remove(top_row)
             feasible_rows = [x - 1 for x in feasible_rows]
+            new_best_rows = []
+            new_mse_for_best_rows = {}
+            new_ssim_for_best_rows = {}
+            for best_row in five_best_row:
+                new_best_rows.append(best_row-1)
+                new_mse_for_best_rows[best_row-1] = mse_for_best_rows[best_row]
+                new_ssim_for_best_rows[best_row - 1] = ssim_for_best_rows[best_row]
+            five_best_row = new_best_rows
+            mse_for_best_rows = new_mse_for_best_rows
+            ssim_for_best_rows = new_ssim_for_best_rows
+            if ssim < best_ssim_score:
+                print('ssim starting to fall.')
+                feasible_rows.remove(top_row)
+
+    best_match_rows = five_best_row[0]
+    best_ssim = ssim_for_best_rows[best_match_rows]
+    best_mse_sequence = mse_for_best_rows[best_match_rows]
+
             #print('Rows matched:', later_segment.height)
-        else:
-            break
+    #    else:
+    #        break
     #if best_match_rows == 15 or best_match_rows == 85:
-    #best_matched_segment.show()
+    best_matched_segment.show()
     #print('best_match_rows:', best_match_rows, 'best_match_score:',best_match_score)
+
+    #best_match_rows, best_ssim, best_mse_sequence = find_best_row(five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count)
+    print('Best row count:',best_match_rows, 'best_ssim:',best_ssim, 'best_mse_sequence:',best_mse_sequence)
+
     best_earlier_segment.show()
     best_later_segment.show()
-    return best_match_rows, best_match_score
+    return best_match_rows, best_match_score, mse
 
 def is_match(segment1, segment2):
     # Simple pixel-wise comparison; can be replaced with more sophisticated methods
@@ -148,6 +314,121 @@ def is_match(segment1, segment2):
     #print('sum(stat.sum):',result)
     return result
 
+# Function to calculate both MSE and SSIM for a pair of image segments
+def cv2_is_match(earlier_segment_np, later_segment_np, height):
+    # Your existing implementation
+    mse = np.mean((earlier_segment_np - later_segment_np) ** 2)
+
+    # Convert images to grayscale for SSIM calculation
+    earlier_gray = cv2.cvtColor(earlier_segment_np, cv2.COLOR_RGB2GRAY)
+    later_gray = cv2.cvtColor(later_segment_np, cv2.COLOR_RGB2GRAY)
+
+    # Calculate SSIM
+    if height > 6:
+        ssim = compare_ssim(earlier_gray, later_gray)
+    else:
+        ssim = -1
+
+    return mse, ssim
+
+
+def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_color2):
+    header_size = 130
+    footer_size = 90
+
+    earlier_image = Image.open(os.path.join(image_folder, earlier_image))
+    later_image = Image.open(os.path.join(image_folder, later_image))
+
+    # Step 1: Identify 5 Best Rows for Potential Match
+    five_best_rows = find_five_best_matching_rows(later_image, header_size, footer_size, speaker_color1, speaker_color2)
+
+    # Step 2: Image Comparisons for Each Best Row
+    best_match_info = compare_for_best_match(earlier_image, later_image, five_best_rows, header_size)
+
+    # Step 3: Selecting the Best Match
+    best_row, best_ssim, best_mse = select_best_match(best_match_info)
+
+    return best_row, best_ssim, best_mse
+
+def find_five_best_matching_rows(later_image, header_size, footer_size, speaker_color1, speaker_color2):
+    later_height = later_image.height
+    later_width = later_image.width
+
+    # Extract the bottom row (excluding the footer)
+    bottom_row_pixels = np.array(later_image.crop((0, later_height - footer_size - 1, later_width, later_height - footer_size)))
+
+    # Initialize a list to store MSE, row index, and color counts
+    mse_list = []
+
+    # Compare the bottom row with every other row (excluding the header and footer)
+    for row in range(header_size, later_height - footer_size):
+        current_row_pixels = np.array(later_image.crop((0, row, later_width, row + 1)))
+        mse = np.mean((bottom_row_pixels - current_row_pixels) ** 2)
+
+        # Count matching pixels for the specified colors
+        color1_count = count_matching_color_pixels(current_row_pixels, speaker_color1)
+        color2_count = count_matching_color_pixels(current_row_pixels, speaker_color2)
+
+        mse_list.append((mse, row, color1_count, color2_count))
+
+    # Sort the list by MSE
+    mse_list.sort(key=lambda x: x[0])
+
+    # Select the best rows ensuring color criteria
+    best_rows = []
+    for mse, row, color1_count, color2_count in mse_list:
+        if len(best_rows) < 5:
+            if color1_count > 100 or color2_count > 100 or len(best_rows) < 3:
+                best_rows.append(row)
+        else:
+            break
+
+    return best_rows
+
+def compare_for_best_match(earlier_image, later_image, best_rows, header_size):
+    comparison_results = []
+
+    for row in best_rows:
+        # Create image segments
+        later_segment = later_image.crop((0, header_size, later_image.width, row + 1))
+        earlier_segment = earlier_image.crop((0, earlier_image.height - later_segment.height, earlier_image.width, earlier_image.height))
+
+        # Convert PIL Image objects to NumPy arrays
+        earlier_segment_np = np.array(earlier_segment)
+        later_segment_np = np.array(later_segment)
+
+        # Calculate MSE and SSIM
+        mse, ssim = cv2_is_match(earlier_segment_np, later_segment_np, later_segment.height)
+
+        # Append results to the list
+        comparison_results.append((row, ssim, mse))
+
+    return comparison_results
+
+def select_best_match(comparison_results):
+    # Check if all segments are at least 7 pixels in height
+    all_segments_tall_enough = all(row + 1 >= 7 for row, _, _ in comparison_results)
+
+    # Initialize variables to store the best match information
+    best_row = None
+    best_ssim = -1 if all_segments_tall_enough else None  # Only relevant if all segments are tall enough
+    best_mse = float('inf')
+
+    for row, ssim, mse in comparison_results:
+        # Use SSIM for comparison if all segments are at least 7 pixels high
+        if all_segments_tall_enough:
+            if ssim > best_ssim:
+                best_ssim = ssim
+                best_mse = mse
+                best_row = row
+        else:
+            # Otherwise, use MSE for all comparisons
+            if mse < best_mse:
+                best_mse = mse
+                best_row = row
+                best_ssim = ssim  # Storing the corresponding SSIM score for reference
+
+    return best_row, best_ssim, best_mse
 
 
 # Function to display two images side by side for sequence confirmation
@@ -627,17 +908,6 @@ while i < len(image_files_sorted) - 1:
     # Check if the image already is processed as a snippet in the database
     filename = image_files_sorted[i]
 
-    # If we have no snippets saved, save it without attempting to visually sequence it.
-    #if Snippet.objects.count() == 0:
-    #    if Segment.objects.count() == 0:
-    #        # No segment exists, so create the first segment.
-    #        segment_for_snippet = Segment.objects.create(length=1)
-    #    else:
-    #        # Some segments exist in the database, so link the first snippet to the first segemnt
-    #        segment_for_snippet = Segment.objects.get(id=1)
-    #    # new_snippet = Snippet.objects.create(place=1, segment=segment_for_snippet, filename=filename)
-    #    new_snippet.segment = segment_for_snippet
-
     # First check if the snippet has been saved and sentences detected.
     if not Snippet.objects.filter(filename=filename).exists():
         print('filename:',filename,'Snippet does not exist.')
@@ -670,221 +940,88 @@ while i < len(image_files_sorted) - 1:
         else:
             # There is at least 1 snippet already saved in at least 1 segment, but no SnippetOverlaps.
             best_overlap_row_count = 0
-            overlaps_with_filename = []
-            other_image_position = []
+            best_ssim_score = -1
+            best_mse_score = 999999
+            #overlaps_with_filename = []
+            #other_image_position = []
             count_matching_overlap_row_count=0
             # first try to match to the end of existing segments.
             print('Comparing to end of segments...')
             for last_filename in last_snippet_filenames:
                 assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
-                matching_row_count, match_score =find_matching_rows(last_filename, filename)
-                print('Comparing with', last_filename, ' matching_row_count =', matching_row_count, 'match_score =', match_score)
+                matching_row_count, ssim_score, mse_score =find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2)
+                print('Comparing with', last_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
-                                              overlaprowcount=matching_row_count)
-                if matching_row_count > best_overlap_row_count:
-                    count_matching_overlap_row_count = 1
-                    best_overlap_row_count = matching_row_count
-                    overlaps_with_filename = [last_filename]
-                    other_image_position = ['prior']
-                elif matching_row_count == best_overlap_row_count:
-                    count_matching_overlap_row_count +=1
-                    overlaps_with_filename.append(last_filename)
-                    other_image_position.append('prior')
-
+                                              overlaprowcount=matching_row_count, mse_score=mse_score, ssim_score=ssim_score)
+                if ssim_score > best_ssim_score:
+                    #count_matching_overlap_row_count = 1
+                    #best_overlap_row_count = matching_row_count
+                    overlaps_with_filename = last_filename
+                    other_image_position = 'prior'
+                elif ssim_score == -1 and mse_score < best_mse_score:
+                    overlaps_with_filename = last_filename
+                    other_image_position = 'prior'
             # then try to match to the start of existing segments.
             print('Comparing to start of segments...')
             for first_filename in first_snippet_filenames:
                 assumed_next_snippet = Snippet.objects.get(filename=first_filename)
-                matching_row_count, match_score =find_matching_rows(filename, first_filename)
-                print('Comparing with', first_filename, ' matching_row_count =', matching_row_count, 'match_score =', match_score)
+                matching_row_count, ssim_score, mse_score =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2)
+                print('Comparing with', first_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
-                                              overlaprowcount=matching_row_count)
-                if matching_row_count > best_overlap_row_count:
-                    count_matching_overlap_row_count = 1
-                    best_overlap_row_count = matching_row_count
-                    overlaps_with_filename = [first_filename]
-                    other_image_position = ['next']
-                elif matching_row_count == best_overlap_row_count:
-                    count_matching_overlap_row_count +=1
-                    overlaps_with_filename.append(first_filename)
-                    other_image_position.append('next')
-            resolve_multiple_matches_with_same_row_count = False
-            if count_matching_overlap_row_count > 1 and resolve_multiple_matches_with_same_row_count == True:
-                visual_compare = False
-                # Several overlaps have same value.
-                # Choose the one with the smallest time difference between last_time and first_time
-                # Loop through each overlap with matching row count.
-                print('Picking sequence based on time difference as multiple images have same overlapping row count.')
-                best_j_overlap_time_difference = 24*60*60
-                best_j = None
-                removed_count=0
-                time_compare = False
-                if time_compare == True:
-                    for j in len(overlaps_with_filename):
-                        overlapping_filename = overlaps_with_filename[j]
-                        overlap_sequence = other_image_position[j]
-                        if overlap_sequence == "prior":
-                            snippet1 = Snippet.objects.get(filename=overlapping_filename)
-                            last_time_snippet1 = snippet1.last_time
-                            first_time_snippet2 = new_snippet.first_time
-                        else:
-                            snippet2 = Snippet.objects.get(filename=overlapping_filename)
-                            last_time_snippet1 = new_snippet.last_time
-                            first_time_snippet2 = snippet2.first_time
-                        time_format = '%H:%M'
-                        last_time_snippet1_dt = datetime.strptime(last_time_snippet1.strftime(time_format), time_format)
-                        first_time_snippet2_dt = datetime.strptime(first_time_snippet2.strftime(time_format),
-                                                                   time_format)
-                        time_difference = abs(first_time_snippet2_dt - last_time_snippet1_dt)
-                        if time_difference > best_j_overlap_time_difference:
-                            best_j_overlap_time_difference = time_difference
-                            best_j = j
-                    overlaps_with_filename = [overlaps_with_filename[j]]
-                    other_image_position = [other_image_position[j]]
-                # Now there is just one filename in overlaps_with_filename
-                elif visual_compare == True:
-                    # More than one snippet has the same number of overlapping rows. Need to visually compare to determine if any sequence should be determined.
-                    # Might be no overlapping rows.
-                    # First reset flag to indicate that should skip to next pair.
-                    global show_next, awaiting_user_feedback
-                    show_next = True
-                    # Loop through each possible sequence of best matching images.
-                    print('Visual comparison of',count_matching_overlap_row_count,'images needed for confirming sequence.')
-                    i = 0
-                    while True:
-                        overlapping_filename = overlaps_with_filename[i]
-                        overlap_sequence = other_image_position[i]
-                        linked_snippet_instance = Snippet.objects.get(filename=overlapping_filename)  # Replace snippet_id with the actual id of the snippet
-                        linked_segment_instance = linked_snippet_instance.segment
-                        print('i:',i,'overlapping_filename:',overlapping_filename, 'overlap_sequence:',overlap_sequence)
-                        if overlap_sequence == 'prior':
-                            image1_time = linked_snippet_instance.last_time
-                            image2_time = new_snippet.first_time
-                            sequence_correct = image1_time <= image2_time
-                            print('Last time on first image:',image1_time, 'First time on second image:', image2_time, 'Sequence correct?',sequence_correct)
-                            display_images_for_confirmation(overlapping_filename, filename, overlap=True,
-                                                    confirm_callback=on_comparison_confirmed,
-                                                    not_in_sequence_callback=on_not_in_sequence_confirmed,
-                                                    show_next_callback=on_show_next)
-                        else:
-                            image1_time = new_snippet.last_time
-                            image2_time = linked_snippet_instance.first_time
-                            sequence_correct = image1_time <= image2_time
-                            print('Last time on first image:',image1_time, 'First time on second image:', image2_time, 'Sequence correct?',sequence_correct)
-                            display_images_for_confirmation(filename, overlapping_filename, overlap=True,
-                                                            confirm_callback=on_comparison_confirmed,
-                                                            not_in_sequence_callback=on_not_in_sequence_confirmed,
-                                                    show_next_callback=on_show_next)
-                        print('Awaiting user feedback...')
-                        while awaiting_user_feedback == True:
-                            pass
-                        if show_next == True:
-                            # User asked to cycle to the next image for comparison.
-                            i+=1
-                            # Check if all viable matches have been shown, if so, start at the beginning.
-                            if i == len(overlaps_with_filename):
-                                i=0
-                        elif images_in_sequence == False:
-                            # User is has indicated that this is not a valid sequence.
-                            # drop the filename from the list of viable sequences.
-                            overlaps_with_filename.pop(i)
-                            other_image_position.pop(i)
-                            if len(overlaps_with_filename) == 0:
-                                # All potential sequences have been rejected. Save the snippet as a new, separate segment.
-                                new_snippet = start_new_segment(new_snippet)
-                                break
+                                              overlaprowcount=matching_row_count, mse_score=mse_score, ssim_score=ssim_score)
+                if ssim_score > best_ssim_score:
+                    #count_matching_overlap_row_count = 1
+                    #best_overlap_row_count = matching_row_count
+                    overlaps_with_filename = first_filename
+                    other_image_position = 'next'
+                elif ssim_score == -1 and mse_score < best_mse_score:
+                    overlaps_with_filename = first_filename
+                    other_image_position = 'next'
 
-                        elif images_in_sequence == True:
-                            # User confirms this is a valid sequence.
-                            if overlap_sequence == "prior":
-                                # The new image is the final image in an existing segment.
-                                print('Adding snippet to END of segment', segment_instance.id)
-                                # Find the maximum place value for Snippets connected to this segment.
-                                max_place = Snippet.objects.filter(segment=linked_segment_instance).aggregate(Max('place'))
-
-                                # Extracting the maximum value
-                                max_place_value = max_place['place__max']
-
-                                # Set the place to be +1 to this max value.
-                                new_snippet.place = max_place_value+1
-                                new_snippet.segment=segment_instance
-                                segment_instance.length +=  1
-                                segment_instance.save()
-
-                            else:
-                                # The new image is the first in an existing sequence.
-                                # Need to update the place values for all existing snippets mapped to this segment.
-                                print('Adding snippet to BEGINNING of segment',segment_instance.id)
-                                existing_snippets = Snippet.objects.filter(segment=linked_segment_instance)
-                                for existing_snippet in existing_snippets:
-                                    existing_snippet.place = existing_snippet.place + 1
-                                    existing_snippet.save()
-                                new_snippet.place = 1
-                                new_snippet.segment = segment_instance
-                            new_snippet.save()
-                            segment_instance.length += 1
-                            segment_instance.save()
-                            break
-
-                        # Highlight if sequence of times for messages suggests correct sequence or wrong sequence.
-                        # Buttons "Show next" or "Not in sequence" or "Correct sequence"
-                    # If one sequence is confirmed, update the segment and place values to include the new image in the chosen sequence.
-                    # If no seqeunce is confirmed i.e. all pairs are ruled out, then create a new segment for this image.
-                    pass
-                else:
-                    # Neither time_compare, not visual_compare active.
-                    # Since no one image had a greater number of matching rows, then place snippet in its own segment.
-                    print('Saving snippet into a new segment.')
-                    new_segment = Segment.objects.create(length=1)
-                    new_snippet.segment = new_segment
-                    new_snippet.place = 1
             # One snippet pair has a higher number of matching rows in the images.
             # update the segment and place values to include the new image in the chosen sequence.
-            if best_overlap_row_count <4:
-                # Too few rows to be a significant image overlap
+            if best_ssim_score < 0.5:
+                # Image match is poor reliability. Leave as a standalone segment.
                 #new_snippet = Snippet.objects.create(place=1, filename=filename)     # Move to earlier part of loop
                 new_snippet = start_new_segment(new_snippet)
             else:
-                # Sufficient rows match.
+                # Sufficient rows match. Should connect to the best matching segment.
                 current_segment = new_snippet.segment
                 if current_segment is not None:
                     count_in_current_segment = Snippet.objects.filter(segment=current_segment).count()
                 else:
                     count_in_current_segment = 0
-                if count_matching_overlap_row_count == 1:
-                    # Only one image has the best row count.
-                    # First check if the new_snippet is in a segment on its own (no other images).
-                    if count_in_current_segment == 1:
-                        # This image is the only one in this segment, so the segment will be empty once the image is attached to another segment.
-                        print('Deleteing segment',current_segment.id, 'as this image was the only one in this segment and it is about to be attached to another segment.')
-                        current_segment.delete()
-                    other_snippet = Snippet.objects.get(filename=overlaps_with_filename[0])  # Replace snippet_id with the actual id of the snippet
-                    segment_for_other_snippet = other_snippet.segment
-                    if other_image_position[0] == "prior":
-                        # The image that was compared comes before this new image. The new image is at the end of the sequence.
-                        # Get the place of the compared image.
-                        print('Adding snippet to END of segment',segment_for_other_snippet.id)
-                        last_place = other_snippet.place
-                        #new_snippet = Snippet.objects.create(place=int(last_place)+1, segment=segment_for_other_snippet, filename=filename)
-                        new_snippet.place = int(last_place)+1
-                        new_snippet.segment = segment_for_other_snippet
-                        segment_for_other_snippet.length += 1
-                        segment_for_other_snippet.save()
-                    else:
-                        # The new image needs to be placed before the image that it was compared to.
-                        # Get all existing snippets for this segment.
-                        print('Adding snippet to BEGINNING of segment', segment_for_other_snippet.id)
-                        existing_snippets = Snippet.objects.filter(segment=segment_for_other_snippet)
-                        for existing_snippet in existing_snippets:
-                            existing_snippet.place = existing_snippet.place + 1
-                            existing_snippet.save()
-                        #new_snippet = Snippet.objects.create(place=1, segment=segment_for_other_snippet, filename=filename)
-                        new_snippet.place = 1
-                        new_snippet.segment = segment_for_other_snippet
-                        segment_for_other_snippet.length += 1
-                        segment_for_other_snippet.save()
+                if count_in_current_segment == 1:
+                    # This image is the only one in this segment, so the segment will be empty once the image is attached to another segment.
+                    print('Deleteing segment',current_segment.id, 'as this image was the only one in this segment and it is about to be attached to another segment.')
+                    current_segment.delete()
+                other_snippet = Snippet.objects.get(filename=overlaps_with_filename)  # Replace snippet_id with the actual id of the snippet
+                segment_for_other_snippet = other_snippet.segment
+                if other_image_position == "prior":
+                    # The image that was compared comes before this new image. The new image is at the end of the sequence.
+                    # Get the place of the compared image.
+                    print('Adding snippet to END of segment',segment_for_other_snippet.id)
+                    last_place = other_snippet.place
+                    #new_snippet = Snippet.objects.create(place=int(last_place)+1, segment=segment_for_other_snippet, filename=filename)
+                    new_snippet.place = int(last_place)+1
+                    new_snippet.segment = segment_for_other_snippet
+                    segment_for_other_snippet.length += 1
+                    segment_for_other_snippet.save()
+                else:
+                    # The new image needs to be placed before the image that it was compared to.
+                    # Get all existing snippets for this segment.
+                    print('Adding snippet to BEGINNING of segment', segment_for_other_snippet.id)
+                    existing_snippets = Snippet.objects.filter(segment=segment_for_other_snippet)
+                    for existing_snippet in existing_snippets:
+                        existing_snippet.place = existing_snippet.place + 1
+                        existing_snippet.save()
+                    #new_snippet = Snippet.objects.create(place=1, segment=segment_for_other_snippet, filename=filename)
+                    new_snippet.place = 1
+                    new_snippet.segment = segment_for_other_snippet
+                    segment_for_other_snippet.length += 1
+                    segment_for_other_snippet.save()
                 else:
                     # Multiple images have matching row count.
                     if count_in_current_segment == 0:
