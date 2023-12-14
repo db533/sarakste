@@ -18,6 +18,23 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
 @login_required
+def generate_segment_links(request):
+    segments = Segment.objects.all()
+    segment_links = []
+
+    for segment in segments:
+        snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
+
+        if snippets.exists():
+            url = "https://sarakste.digitalaisbizness.lv/lasit/?frag1={}&place1={}".format(segment.id, snippets[0].place)
+            if snippets.count() > 1:
+                url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
+            segment_links.append(url)
+
+    return render(request, 'base.html', {'segment_links': segment_links})
+
+
+@login_required
 def display_snippets(request):
 
     min_segment = Snippet.objects.aggregate(Min('segment'))['segment__min']

@@ -19,6 +19,13 @@
           {% if user.is_authenticated %}
             <h2>D un D sarakste</h2>
             <p><li>Sarunas fragmenti:</li></p>
+              {% if segment_links %}
+                <ul>
+                    {% for link in segment_links %}
+                        <li><a href="{{ link }}">Open Segment</a></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
             <p><li><strong><a href="{% url 'logout' %}?next={{ request.path }}">Atslēgties</a></strong></li></p>
           {% else %}
