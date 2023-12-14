@@ -68,6 +68,7 @@ class Sentence(models.Model):
                                help_text='Kurš rakstīja šo teikumu',
                                verbose_name=('Teikuma autors'))
     text = models.TextField(help_text='Rakstītais teikums', null=True, blank=True)
+    reply_to_text = models.TextField(help_text='Teksts kam tika atbildēts', null=True, blank=True)
     snippet = models.ForeignKey(Snippet, on_delete=models.CASCADE)
     sequence = models.IntegerField(help_text='The position of this sentence in the Snippet.')
     confidence = models.DecimalField(max_digits=6, decimal_places=4, null=True)

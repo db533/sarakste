@@ -21,6 +21,8 @@ delete_overlaps = False
 delete_all = True
 update_local_database = False
 
+
+
 import environ
 from django.conf import settings
 from sarakste_app.models import *  # Replace 'myapp' with your app name
@@ -71,9 +73,11 @@ def hex_to_bgr(hex_code):
 # Define specific colors in hex format
 speaker_color1_hex = "#DCF8C6"  # Light Green
 speaker_color2_hex = "#F8F8F8"  # Whitish
+text_color_hex = "#000000"  # Black
 
 speaker_color1 = hex_to_bgr(speaker_color1_hex)
 speaker_color2 = hex_to_bgr(speaker_color2_hex)
+text_color = hex_to_bgr(text_color_hex)
 
 # Function to calculate the quantity of pixels that match a specific color
 def count_matching_color_pixels(image, color):
@@ -164,8 +168,14 @@ def find_best_row(five_best_row, mse_for_best_rows, ssim_for_best_rows, best_mat
     return best_row_counter, best_ssim, best_mse_sequence
 
 def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_score = 150):
-    header_size = 130
-    footer_size = 90
+    if earlier_image.height < 1335:
+        # Dainis' images = 1334 height
+        header_size = 130
+        footer_size = 90
+    else:
+        # Dacite's images = 1920 height
+        header_size = 187
+        footer_size = 130
 
     earlier_image = Image.open(os.path.join(image_folder, earlier_image))
     later_image = Image.open(os.path.join(image_folder, later_image))
@@ -332,30 +342,79 @@ def cv2_is_match(earlier_segment_np, later_segment_np, height):
     return mse, ssim
 
 
-def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_color2):
-    header_size = 130
-    footer_size = 90
-
+def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_color2, text_color):
     earlier_image = Image.open(os.path.join(image_folder, earlier_image))
     later_image = Image.open(os.path.join(image_folder, later_image))
 
+    if earlier_image.height < 1335:
+        # Dainis' images = 1334 height
+        header_size = 130
+        footer_size = 90
+    else:
+        # Dacite's images = 1920 height
+        header_size = 187
+        footer_size = 130
+
     # Step 1: Identify 5 Best Rows for Potential Match
-    five_best_rows = find_five_best_matching_rows(later_image, header_size, footer_size, speaker_color1, speaker_color2)
+    five_best_rows, offset = find_five_best_matching_rows(earlier_image, later_image, header_size, footer_size, speaker_color1, speaker_color2, text_color)
 
     # Step 2: Image Comparisons for Each Best Row
-    best_match_info = compare_for_best_match(earlier_image, later_image, five_best_rows, header_size)
+    best_match_info = compare_for_best_match(earlier_image, later_image, five_best_rows, header_size, footer_size, offset)
 
     # Step 3: Selecting the Best Match
     best_row, best_ssim, best_mse = select_best_match(best_match_info)
 
     return best_row, best_ssim, best_mse
 
-def find_five_best_matching_rows(later_image, header_size, footer_size, speaker_color1, speaker_color2):
+def find_bottom_row_with_colours(earlier_image, earlier_height, footer_size, earlier_width, speaker_color1, speaker_color2, text_color):
+    # Look for a row from bottom that has black from text of a message and either white or green from the text bubble.
+    if earlier_image.height < 1335:
+        # Dainis' images = 1334 height
+        max_offset = 50
+        pixel_threshold = 100
+    else:
+        # Dacite's images = 1920 height
+        max_offset = 72
+        pixel_threshold = 150
+
+    for offset in range(0, max_offset):
+        # Extract the bottom row (excluding the footer)
+        bottom_row = earlier_image.crop(
+            (0, earlier_height - footer_size - offset, earlier_width, earlier_height - footer_size + 1 - offset))
+        bottom_row_pixels = np.array(bottom_row)
+        #bottom_row.show()
+
+        # Count matching pixels for the specified colors
+        color1_count = count_matching_color_pixels(bottom_row_pixels, speaker_color1)
+        color2_count = count_matching_color_pixels(bottom_row_pixels, speaker_color2)
+        text_color_count = count_matching_color_pixels(bottom_row_pixels, text_color)
+
+        if (color1_count > pixel_threshold or color2_count > pixel_threshold) and text_color_count >pixel_threshold:
+            return bottom_row_pixels, offset
+
+    # If we reach here, none of the rows had sufficient black and text bubble colour to look like a good comparison row
+    # Use the lowest row.
+    offset = 0
+    bottom_row = earlier_image.crop(
+        (0, earlier_height - footer_size - offset, earlier_width, earlier_height - footer_size + 1 - offset))
+    bottom_row_pixels = np.array(bottom_row)
+    return bottom_row_pixels, offset
+
+def find_five_best_matching_rows(earlier_image, later_image, header_size, footer_size, speaker_color1, speaker_color2, text_color):
     later_height = later_image.height
     later_width = later_image.width
+    earlier_height = earlier_image.height
+    earlier_width = earlier_image.width
+    if earlier_height < 1335:
+        # Dainis' images = 1334 height
+        pixel_threshold = 100
+    else:
+        # Dacite's images = 1920 height
+        pixel_threshold = 150
 
-    # Extract the bottom row (excluding the footer)
-    bottom_row_pixels = np.array(later_image.crop((0, later_height - footer_size - 1, later_width, later_height - footer_size)))
+    # Find a row near bottom to use for looking for a match in other images.
+    bottom_row_pixels, offset = find_bottom_row_with_colours(earlier_image, earlier_height, footer_size, earlier_width, speaker_color1,
+                                 speaker_color2, text_color)
 
     # Initialize a list to store MSE, row index, and color counts
     mse_list = []
@@ -378,20 +437,23 @@ def find_five_best_matching_rows(later_image, header_size, footer_size, speaker_
     best_rows = []
     for mse, row, color1_count, color2_count in mse_list:
         if len(best_rows) < 5:
-            if color1_count > 100 or color2_count > 100 or len(best_rows) < 3:
+            if color1_count > pixel_threshold or color2_count > pixel_threshold or len(best_rows) < 3:
                 best_rows.append(row)
         else:
             break
 
-    return best_rows
+    return best_rows, offset
 
-def compare_for_best_match(earlier_image, later_image, best_rows, header_size):
+def compare_for_best_match(earlier_image, later_image, best_rows, header_size, footer_size, offset):
     comparison_results = []
 
     for row in best_rows:
         # Create image segments
-        later_segment = later_image.crop((0, header_size, later_image.width, row + 1))
-        earlier_segment = earlier_image.crop((0, earlier_image.height - later_segment.height, earlier_image.width, earlier_image.height))
+        later_segment = later_image.crop((0, header_size, later_image.width, row + 1 + offset))
+        later_segment_height = later_segment.height
+        earlier_segment = earlier_image.crop((0, earlier_image.height - later_segment.height - footer_size, earlier_image.width, earlier_image.height- footer_size))
+        #earlier_segment.show()
+        #later_segment.show()
 
         # Convert PIL Image objects to NumPy arrays
         earlier_segment_np = np.array(earlier_segment)
@@ -399,6 +461,7 @@ def compare_for_best_match(earlier_image, later_image, best_rows, header_size):
 
         # Calculate MSE and SSIM
         mse, ssim = cv2_is_match(earlier_segment_np, later_segment_np, later_segment.height)
+        print('rows:',row,'mse:',mse, 'ssim:',ssim)
 
         # Append results to the list
         comparison_results.append((row, ssim, mse))
@@ -718,36 +781,50 @@ def read_dow(text):
     #print('Tested', text, 'as a day of week. DOW=',dow)
     return dow
 
-def add_sentences(new_snippet, sentence_results, filename):
+def add_sentences(new_snippet, sentence_results, image_saved_by):
+
+    if image_saved_by == "Dainis":
+        centerpoint_left = 370
+        centerpoint_right = 380
+        left_most_place_for_right_bubble = 90
+        left_most_place_for_left_bubble = int((80/1080)*750)
+        reply_offset = int((20/1080)*750)
+    else:
+        centerpoint_left = 530
+        centerpoint_right = 550
+        left_most_place_for_right_bubble = int(90*1080/750)
+        left_most_place_for_left_bubble = 80
+        reply_offset = 20
+
     # Loop through each sentence found in the image and create a sentence in the database.
+    print_debug = True
     print('Looping through OCR text to create sentences...')
     new_setence = False
     sequence = 0
     most_recent_time = None
     sentence_text = ""
+    replying_to_text = ""
     min_confidence = 1
     speaker = None
+    largest_sentence_x = None
     for bounding_box, text, confidence in sentence_results:
-        #print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence)
-        # Determine the type of text box based on location:
-        # text is formatted as a time = time
-        # (x1 + x2) is between 740 and 760 = Day of week
-        # x1 > 150 = Dainis
-        # x1 < 50 = Dacīte
-
+        if print_debug:
+            print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence)
         # First check if this looks like a date.
         text, text_as_time = is_valid_24_hour_time(text)
         centerpoint = (bounding_box[0][0] + bounding_box[1][0]) / 2
-        #print('centerpoint:',centerpoint)
+        if print_debug:
+            print('centerpoint:',centerpoint)
         if text_as_time == True:
             # This text box is a timestamp for a sentence.
             # Check if there is text for a sentence to save
             if len(sentence_text) > 0:
                 # We have some text for a sentence, so need to save it with the time.
                 # Compute average confidence of the scanned text.
-                #print('Creating sentence with time',text,'. Sentence:',sentence_text)
+                if print_debug:
+                    print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text)
                 most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
-                                                               sequence=sequence, confidence=min_confidence)
+                                                               sequence=sequence, confidence=min_confidence, reply_to_text=replying_to_text)
                 if text != "":
                     most_recent_sentence.time = text
                     most_recent_sentence.save()
@@ -764,57 +841,44 @@ def add_sentences(new_snippet, sentence_results, filename):
 
         # Is the text box located where a new day might be communicated?
         # Look at x1 and x2 of the bounding box and determin if it is centered.
-        elif centerpoint > 370 and centerpoint < 380:
+
+        elif centerpoint > centerpoint_left and centerpoint < centerpoint_right:
             # textbox is centered.
-            #print('Appears to be a centred textbox...')
+            if print_debug:
+                print('Appears to be a centred textbox...')
             day_of_week = read_dow(text)
             new_snippet.weekday = day_of_week
             new_snippet.save()
         elif speaker is None:
-            if bounding_box[0][0] > 130:
-                #print('Speaker: Dainis')
-                speaker = "1"
+            if bounding_box[0][0] > left_most_place_for_right_bubble:
+                if image_saved_by == "Dainis":
+                    speaker = "1"
+                else:
+                    speaker = "0"
             else:
-                #print('Speaker: Dacīte')
-                speaker = "0"
+                if image_saved_by == "Dainis":
+                    speaker = "0"
+                else:
+                    speaker = "1"
+            if print_debug and speaker == "0":
+                print('Speaker: Dacīte')
+            elif print_debug and speaker == "1":
+                print('Speaker: Dainis')
+            # Set the largest value of x to the that of this textbox as setence seems to be starting.
+            largest_sentence_x = bounding_box[0][0]
             sentence_text = text
             if confidence < min_confidence:
                 min_confidence = confidence
         elif speaker is not None:
-            sentence_text = sentence_text + ' ' + text
+            current_x = bounding_box[0][0]
+            if current_x < largest_sentence_x - reply_offset:
+                # The x for this text box is more to the left, so we have been gathering text for a reply.
+                replying_to_text = sentence_text
+                sentence_text = ""
+            else:
+                sentence_text = sentence_text + ' ' + text
             if confidence < min_confidence:
                 min_confidence = confidence
-            #else:
-            #    # This is the start of a new sentence and prior sentence has not been saved yet.
-            #    print('No time, but new speaker. Creating sentence:', sentence_text)
-            #    most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
-            #                                                       sequence=sequence, confidence=min_confidence)
-            #    sequence += 1
-            #    # Start a fresh sentence
-            #    sentence_text = text
-            #    min_confidence = confidence
-            #    speaker = "1"
-        #elif bounding_box[0][0] < 70:
-        #    print('Speaker: Dacīte')
-        #    if speaker is None or speaker == "0":
-        #        if len(sentence_text) > 0:
-        #            sentence_text = sentence_text + ' ' + text
-        #        else:
-        #            sentence_text = text
-        #        speaker = "0"
-                # Check if this text has lower confidence
-        #        if confidence < min_confidence:
-        #            min_confidence = confidence
-        #    else:
-        #        # This is the start of a new sentence and prior sentence has not been saved yet.
-        #        print('No time, but new speaker. Creating sentence:', sentence_text)
-        #        most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
-        #                                                           sequence=sequence, confidence=min_confidence)
-        #        sequence += 1
-        #        # Start a fresh sentence
-        #        sentence_text = text
-        #        min_confidence = confidence
-        #        speaker = "0"
         else:
             print('Text box did not match any expected positions.')
     # Have completed looping through scanned text.
@@ -899,10 +963,14 @@ image_files = [(filename)
 image_files_sorted = sorted(image_files, key=lambda x: x[1])
 image_count = len(image_files)
 
+# Tests:
+image_files_sorted = ['Screenshot_20180401-181016.png', 'Screenshot_20180401-180957.png']
+
+
 # User interaction loop
 #sequence_number = len(confirmed_sequences) + 1
 i = 0
-while i < len(image_files_sorted) - 1:
+while i < len(image_files_sorted) :
     # Update the first and last image names for each sequence.
     first_snippet_filenames, last_snippet_filenames = recompute_sequences()
     # Check if the image already is processed as a snippet in the database
@@ -915,8 +983,20 @@ while i < len(image_files_sorted) - 1:
 
         # Read the text on the image
         ocr_result = ocr_image(filename, image_folder)
-        sentence_results = filter_text_above_threshold(ocr_result, 118)
-        add_sentences(new_snippet, sentence_results, filename)
+
+        # Check size of image to determine where to start filtering
+        image = Image.open(os.path.join(image_folder, filename))
+        if image.height < 1335:
+            filter_threshold = 118
+        else:
+            filter_threshold = 170
+
+        if 'Screenshot' in filename:
+            image_saved_by = 'Dacite'
+        else:
+            image_saved_by = 'Dainis'
+        sentence_results = filter_text_above_threshold(ocr_result, filter_threshold)
+        add_sentences(new_snippet, sentence_results, image_saved_by)
 
     # Check if overlaps not found. These may have been deleted.
     new_snippet = Snippet.objects.get(filename=filename)
@@ -949,7 +1029,7 @@ while i < len(image_files_sorted) - 1:
             print('Comparing to end of segments...')
             for last_filename in last_snippet_filenames:
                 assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
-                matching_row_count, ssim_score, mse_score =find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2)
+                matching_row_count, ssim_score, mse_score =find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color)
                 print('Comparing with', last_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
@@ -959,14 +1039,16 @@ while i < len(image_files_sorted) - 1:
                     #best_overlap_row_count = matching_row_count
                     overlaps_with_filename = last_filename
                     other_image_position = 'prior'
+                    best_ssim_score = ssim_score
                 elif ssim_score == -1 and mse_score < best_mse_score:
                     overlaps_with_filename = last_filename
                     other_image_position = 'prior'
+                    best_mse_score = mse_score
             # then try to match to the start of existing segments.
             print('Comparing to start of segments...')
             for first_filename in first_snippet_filenames:
                 assumed_next_snippet = Snippet.objects.get(filename=first_filename)
-                matching_row_count, ssim_score, mse_score =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2)
+                matching_row_count, ssim_score, mse_score =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color)
                 print('Comparing with', first_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
@@ -976,29 +1058,30 @@ while i < len(image_files_sorted) - 1:
                     #best_overlap_row_count = matching_row_count
                     overlaps_with_filename = first_filename
                     other_image_position = 'next'
+                    best_ssim_score = ssim_score
                 elif ssim_score == -1 and mse_score < best_mse_score:
                     overlaps_with_filename = first_filename
                     other_image_position = 'next'
 
             # One snippet pair has a higher number of matching rows in the images.
             # update the segment and place values to include the new image in the chosen sequence.
-            if best_ssim_score < 0.5:
+            if best_ssim_score < 0.7:
+                print('No good match to existing segments. Creating new segment.')
                 # Image match is poor reliability. Leave as a standalone segment.
                 #new_snippet = Snippet.objects.create(place=1, filename=filename)     # Move to earlier part of loop
                 new_snippet = start_new_segment(new_snippet)
             else:
                 # Sufficient rows match. Should connect to the best matching segment.
-                current_segment = new_snippet.segment
-                if current_segment is not None:
-                    count_in_current_segment = Snippet.objects.filter(segment=current_segment).count()
-                else:
-                    count_in_current_segment = 0
-                if count_in_current_segment == 1:
-                    # This image is the only one in this segment, so the segment will be empty once the image is attached to another segment.
-                    print('Deleteing segment',current_segment.id, 'as this image was the only one in this segment and it is about to be attached to another segment.')
-                    current_segment.delete()
+
+                # The prior / next snippet may or may not have a segment associated with it.
                 other_snippet = Snippet.objects.get(filename=overlaps_with_filename)  # Replace snippet_id with the actual id of the snippet
                 segment_for_other_snippet = other_snippet.segment
+                if segment_for_other_snippet is None:
+                    # The matched snippet is not yet in a segment. Create a segment for both snippets.
+                    segment_for_other_snippet = Segment.objects.create(length=1)
+                    other_snippet.segment = segment_for_other_snippet
+                    other_snippet.place = 1
+                    other_snippet.save()
                 if other_image_position == "prior":
                     # The image that was compared comes before this new image. The new image is at the end of the sequence.
                     # Get the place of the compared image.
@@ -1022,16 +1105,6 @@ while i < len(image_files_sorted) - 1:
                     new_snippet.segment = segment_for_other_snippet
                     segment_for_other_snippet.length += 1
                     segment_for_other_snippet.save()
-                else:
-                    # Multiple images have matching row count.
-                    if count_in_current_segment == 0:
-                        print('Saving snippet into a new segment.')
-                        new_segment = Segment.objects.create(length=1)
-                        new_snippet.segment = new_segment
-                        new_snippet.place = 1
-                        new_snippet.save()
-                    else:
-                        print('Should already be in its own segment.')
         new_snippet.save()
     else:
         print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.')
