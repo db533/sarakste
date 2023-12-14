@@ -175,7 +175,7 @@ def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_s
     else:
         # Dacite's images = 1920 height
         header_size = 187
-        footer_size = 130
+        footer_size = 163
 
     earlier_image = Image.open(os.path.join(image_folder, earlier_image))
     later_image = Image.open(os.path.join(image_folder, later_image))
@@ -353,7 +353,7 @@ def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_colo
     else:
         # Dacite's images = 1920 height
         header_size = 187
-        footer_size = 130
+        footer_size = 163
 
     # Step 1: Identify 5 Best Rows for Potential Match
     five_best_rows, offset = find_five_best_matching_rows(earlier_image, later_image, header_size, footer_size, speaker_color1, speaker_color2, text_color)
@@ -362,9 +362,9 @@ def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_colo
     best_match_info = compare_for_best_match(earlier_image, later_image, five_best_rows, header_size, footer_size, offset)
 
     # Step 3: Selecting the Best Match
-    best_row, best_ssim, best_mse = select_best_match(best_match_info)
+    best_row, best_ssim, best_mse, best_height = select_best_match(best_match_info)
 
-    return best_row, best_ssim, best_mse
+    return best_row, best_ssim, best_mse, best_height
 
 def find_bottom_row_with_colours(earlier_image, earlier_height, footer_size, earlier_width, speaker_color1, speaker_color2, text_color):
     # Look for a row from bottom that has black from text of a message and either white or green from the text bubble.
@@ -464,34 +464,37 @@ def compare_for_best_match(earlier_image, later_image, best_rows, header_size, f
         print('rows:',row,'mse:',mse, 'ssim:',ssim)
 
         # Append results to the list
-        comparison_results.append((row, ssim, mse))
+        comparison_results.append((row, ssim, mse, later_segment_height))
 
     return comparison_results
 
 def select_best_match(comparison_results):
     # Check if all segments are at least 7 pixels in height
-    all_segments_tall_enough = all(row + 1 >= 7 for row, _, _ in comparison_results)
+    all_segments_tall_enough = all(row + 1 >= 7 for row, _, _, _ in comparison_results)
 
     # Initialize variables to store the best match information
     best_row = None
     best_ssim = -1 if all_segments_tall_enough else None  # Only relevant if all segments are tall enough
     best_mse = float('inf')
+    best_height = 0
 
-    for row, ssim, mse in comparison_results:
+    for row, ssim, mse, height in comparison_results:
         # Use SSIM for comparison if all segments are at least 7 pixels high
         if all_segments_tall_enough:
             if ssim > best_ssim:
                 best_ssim = ssim
                 best_mse = mse
                 best_row = row
+                best_height = height
         else:
             # Otherwise, use MSE for all comparisons
             if mse < best_mse:
                 best_mse = mse
                 best_row = row
                 best_ssim = ssim  # Storing the corresponding SSIM score for reference
+                best_height = height
 
-    return best_row, best_ssim, best_mse
+    return best_row, best_ssim, best_mse, best_height
 
 
 # Function to display two images side by side for sequence confirmation
@@ -710,12 +713,12 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
     print('The new image was not matched to any existing sequence.')
     return None, None
 
-def filter_text_above_threshold(ocr_results, y_threshold):
+def filter_text_above_threshold(ocr_results, y_threshold, image_height):
     filtered_results = []
 
     for bounding_box, text, confidence in ocr_results:
         # Check if all y-coordinates in the bounding box are above the threshold
-        if all(y > y_threshold for x, y in bounding_box):
+        if all(y > y_threshold for x, y in bounding_box) and all(y < (image_height - y_threshold) for x, y in bounding_box):
             filtered_results.append((bounding_box, text, confidence))
 
     return filtered_results
@@ -737,25 +740,31 @@ def ocr_image(filename, image_folder):
 
 def is_valid_24_hour_time(time_string):
     # Regular expression for matching 24-hour time format (HH:MM)
-    cleaned_time_string = time_string.replace('.', ':')
+    #cleaned_time_string = time_string.replace('.', ':')
+    #cleaned_time_string = time_string.replace(',', ':')
+    returned_text = time_string
 
-    pattern = r'^([01]?[0-9]|2[0-3]):([0-5][0-9])$'
-    result = bool(re.match(pattern, cleaned_time_string))
-
-    #print('Tested',time_string,'. Is a time?',result)
+    pattern = r'^([01]?[0-9]|2[0-3])[:.;80oOB%@&]([0-5][0-9])$'
+    result = bool(re.match(pattern, time_string))
 
     if result == True:
-        returned_text = cleaned_time_string
+        # Replace the third character with a colon.
+        returned_text = re.sub(pattern, r'\1:\2', time_string)
     else:
-        returned_text = time_string
+        # Let's check if we have a malformed timestring with 1-2 digits, a separator and 1-2 digits and nothing more.
+        pattern = r'^\d{1,2}[:.;%@&]\d{1,2}$'
+        result = bool(re.match(pattern, time_string))
+        if result == True:
+            returned_text = ""
 
     if len(time_string) <4:
         #print('= text =: =',time_string,'=')
-        pattern = r'^[0-2][0-9]:'
+        pattern = r'^([01]?[0-9]|2[0-3])[:.;80oOB%@&]'
         if bool(re.match(pattern, time_string[:3])):
             # we probably have a partial time_string.
             returned_text = ""
             result = True
+
     # Using regex to match the pattern with the input string
     return returned_text, result
 
@@ -788,13 +797,13 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
         centerpoint_right = 380
         left_most_place_for_right_bubble = 90
         left_most_place_for_left_bubble = int((80/1080)*750)
-        reply_offset = int((20/1080)*750)
+        reply_offset = int((17/1080)*750)
     else:
         centerpoint_left = 530
         centerpoint_right = 550
         left_most_place_for_right_bubble = int(90*1080/750)
         left_most_place_for_left_bubble = 80
-        reply_offset = 20
+        reply_offset = 17
 
     # Loop through each sentence found in the image and create a sentence in the database.
     print_debug = True
@@ -807,80 +816,91 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
     min_confidence = 1
     speaker = None
     largest_sentence_x = None
+    weekday_text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Pir', 'Otr', 'Tre', 'Cet', 'Pie', 'Ses', 'Svē']
     for bounding_box, text, confidence in sentence_results:
         if print_debug:
             print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence)
         # First check if this looks like a date.
         text, text_as_time = is_valid_24_hour_time(text)
         centerpoint = (bounding_box[0][0] + bounding_box[1][0]) / 2
+        week_day_text = text[:3] in weekday_text
         if print_debug:
             print('centerpoint:',centerpoint)
-        if text_as_time == True:
-            # This text box is a timestamp for a sentence.
-            # Check if there is text for a sentence to save
-            if len(sentence_text) > 0:
-                # We have some text for a sentence, so need to save it with the time.
-                # Compute average confidence of the scanned text.
+        # Skip text box if it is clearly a label for a speaker's reply.
+        if not(text == 'Koris Dainis' or text == 'Dacīte Pence (koris)'):
+            if text_as_time == True:
+                # This text box is a timestamp for a sentence.
+                # Check if there is text for a sentence to save
+                if len(sentence_text) > 0:
+                    # We have some text for a sentence, so need to save it with the time.
+                    # Compute average confidence of the scanned text.
+                    if print_debug:
+                        print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text)
+                    most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
+                                                                   sequence=sequence, confidence=min_confidence, reply_to_text=replying_to_text)
+                    if text != "":
+                        most_recent_sentence.time = text
+                        most_recent_sentence.save()
+                        most_recent_time = text
+                    sequence += 1
+                    sentence_text = ""
+                    replying_to_text = ""
+                    # most_recent_sentence.time = text
+                    # most_recent_sentence.save()
+                    speaker = None
+                    min_confidence = 1
+                if new_snippet.first_time is None:
+                    new_snippet.first_time = text
+                    new_snippet.save()
+
+            # Is the text box located where a new day might be communicated?
+            # Look at x1 and x2 of the bounding box and determin if it is centered.
+
+            elif centerpoint > centerpoint_left and centerpoint < centerpoint_right and week_day_text:
+                # textbox is centered.
                 if print_debug:
-                    print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text)
-                most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
-                                                               sequence=sequence, confidence=min_confidence, reply_to_text=replying_to_text)
-                if text != "":
-                    most_recent_sentence.time = text
-                    most_recent_sentence.save()
-                    most_recent_time = text
-                sequence += 1
-                sentence_text = ""
-                # most_recent_sentence.time = text
-                # most_recent_sentence.save()
-                speaker = None
-                min_confidence = 1
-            if new_snippet.first_time is None:
-                new_snippet.first_time = text
+                    print('Appears to be a centred textbox and text starts with day of week text...')
+                day_of_week = read_dow(text)
+                new_snippet.weekday = day_of_week
                 new_snippet.save()
-
-        # Is the text box located where a new day might be communicated?
-        # Look at x1 and x2 of the bounding box and determin if it is centered.
-
-        elif centerpoint > centerpoint_left and centerpoint < centerpoint_right:
-            # textbox is centered.
-            if print_debug:
-                print('Appears to be a centred textbox...')
-            day_of_week = read_dow(text)
-            new_snippet.weekday = day_of_week
-            new_snippet.save()
-        elif speaker is None:
-            if bounding_box[0][0] > left_most_place_for_right_bubble:
-                if image_saved_by == "Dainis":
-                    speaker = "1"
+            elif speaker is None:
+                if bounding_box[0][0] > left_most_place_for_right_bubble:
+                    if image_saved_by == "Dainis":
+                        speaker = "1"
+                    else:
+                        speaker = "0"
                 else:
-                    speaker = "0"
-            else:
-                if image_saved_by == "Dainis":
-                    speaker = "0"
+                    if image_saved_by == "Dainis":
+                        speaker = "0"
+                    else:
+                        speaker = "1"
+                if print_debug and speaker == "0":
+                    print('Speaker: Dacīte')
+                elif print_debug and speaker == "1":
+                    print('Speaker: Dainis')
+                # Set the largest value of x to the that of this textbox as setence seems to be starting.
+                largest_sentence_x = bounding_box[0][0]
+                sentence_text = text
+                if confidence < min_confidence:
+                    min_confidence = confidence
+            elif speaker is not None:
+                current_x = bounding_box[0][0]
+                if current_x < largest_sentence_x - reply_offset and replying_to_text == "":
+                    # The x for this text box is more to the left, so we have been gathering text for a reply.
+                    if print_debug:
+                        print('Previous text seems to be a reply_to text item...')
+                    replying_to_text = sentence_text
+                    sentence_text = text
                 else:
-                    speaker = "1"
-            if print_debug and speaker == "0":
-                print('Speaker: Dacīte')
-            elif print_debug and speaker == "1":
-                print('Speaker: Dainis')
-            # Set the largest value of x to the that of this textbox as setence seems to be starting.
-            largest_sentence_x = bounding_box[0][0]
-            sentence_text = text
-            if confidence < min_confidence:
-                min_confidence = confidence
-        elif speaker is not None:
-            current_x = bounding_box[0][0]
-            if current_x < largest_sentence_x - reply_offset:
-                # The x for this text box is more to the left, so we have been gathering text for a reply.
-                replying_to_text = sentence_text
-                sentence_text = ""
+                    if print_debug:
+                        print('Continuing current sentence...')
+                    sentence_text = sentence_text + ' ' + text
+                if confidence < min_confidence:
+                    min_confidence = confidence
             else:
-                sentence_text = sentence_text + ' ' + text
-            if confidence < min_confidence:
-                min_confidence = confidence
+                print('Text box did not match any expected positions.')
         else:
-            print('Text box did not match any expected positions.')
+            print('Text matched a speaker label in reply_to text. Skipping.')
     # Have completed looping through scanned text.
     # If sentence_text is not None, then there is unsaved sentence that needs to be saved.
     if len(sentence_text) > 0:
@@ -964,7 +984,7 @@ image_files_sorted = sorted(image_files, key=lambda x: x[1])
 image_count = len(image_files)
 
 # Tests:
-image_files_sorted = ['Screenshot_20180401-181016.png', 'Screenshot_20180401-180957.png']
+#image_files_sorted = [ 'Screenshot_20180224-234128.png']
 
 
 # User interaction loop
@@ -995,7 +1015,7 @@ while i < len(image_files_sorted) :
             image_saved_by = 'Dacite'
         else:
             image_saved_by = 'Dainis'
-        sentence_results = filter_text_above_threshold(ocr_result, filter_threshold)
+        sentence_results = filter_text_above_threshold(ocr_result, filter_threshold, image.height)
         add_sentences(new_snippet, sentence_results, image_saved_by)
 
     # Check if overlaps not found. These may have been deleted.
@@ -1029,11 +1049,11 @@ while i < len(image_files_sorted) :
             print('Comparing to end of segments...')
             for last_filename in last_snippet_filenames:
                 assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
-                matching_row_count, ssim_score, mse_score =find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color)
-                print('Comparing with', last_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
+                matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color)
+                print('Comparing with', last_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
-                                              overlaprowcount=matching_row_count, mse_score=mse_score, ssim_score=ssim_score)
+                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
                 if ssim_score > best_ssim_score:
                     #count_matching_overlap_row_count = 1
                     #best_overlap_row_count = matching_row_count
@@ -1048,11 +1068,11 @@ while i < len(image_files_sorted) :
             print('Comparing to start of segments...')
             for first_filename in first_snippet_filenames:
                 assumed_next_snippet = Snippet.objects.get(filename=first_filename)
-                matching_row_count, ssim_score, mse_score =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color)
-                print('Comparing with', first_filename, ' matching_row_count =', matching_row_count, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
+                matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color)
+                print('Comparing with', first_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
-                                              overlaprowcount=matching_row_count, mse_score=mse_score, ssim_score=ssim_score)
+                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
                 if ssim_score > best_ssim_score:
                     #count_matching_overlap_row_count = 1
                     #best_overlap_row_count = matching_row_count

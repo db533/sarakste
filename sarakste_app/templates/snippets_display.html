@@ -99,21 +99,21 @@
             <td>
                 Snippet before this one:<br>
                 {% for overlap in top_overlaps_as_first_snippet1 %}
-                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }}<br>
                 {% endfor %}
                 Snippet after this one:<br>
                 {% for overlap in top_overlaps_as_second_snippet1 %}
-                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }}<br>
                 {% endfor %}
             </td>
             <td>
                 Snippet before this one:<br>
                 {% for overlap in top_overlaps_as_first_snippet2 %}
-                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                    Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }}<br>
                 {% endfor %}
                 Snippet after this one:<br>
                 {% for overlap in top_overlaps_as_second_snippet2 %}
-                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows<br>
+                    Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }}<br>
                 {% endfor %}
             </td>
 
