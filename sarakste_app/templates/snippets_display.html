@@ -97,6 +97,20 @@
         </tr>
         <tr>
             <td>
+                <!-- Inputs for navigating from snippet1 -->
+                Navigate to:
+                <input type="text" name="nav_frag1" placeholder="Frag" size="3" value="{{ frag1 }}">
+                <input type="text" name="nav_place1" placeholder="Place" size="3" value="{{ place1 }}">
+            </td>
+            <td>
+                <!-- Inputs for navigating from snippet2 -->
+                Navigate to:
+                <input type="text" name="nav_frag2" placeholder="Frag" size="3" value="{{ frag2 }}">
+                <input type="text" name="nav_place2" placeholder="Place" size="3" value="{{ place2 }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
                 Snippet before this one:<br>
                 {% for overlap in top_overlaps_as_first_snippet1 %}
                     Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }}<br>

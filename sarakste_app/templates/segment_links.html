@@ -1,0 +1,7 @@
+{% if segment_links %}
+    <ul>
+        {% for segment_id, link, length in segment_links %}
+            <li><a href="{{ link }}">Segment {{ segment_id }} ({{ length }})</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}

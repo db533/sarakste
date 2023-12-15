@@ -21,18 +21,16 @@ from django.contrib.auth.decorators import login_required
 def generate_segment_links(request):
     segments = Segment.objects.all()
     segment_links = []
-
     for segment in segments:
         snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
-
+        length = segment.length
         if snippets.exists():
-            url = "https://sarakste.digitalaisbizness.lv/lasit/?frag1={}&place1={}".format(segment.id, snippets[0].place)
+            url = "https://sarakste.digitalaisbizness.lv/lasit/?frag1={}&place1={}".format(segment.id,
+                                                                                           snippets[0].place)
             if snippets.count() > 1:
                 url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
-            segment_links.append(url)
-
-    return render(request, 'base.html', {'segment_links': segment_links})
-
+            segment_links.append((segment.id, url, length))
+    return render(request, 'segment_list.html', {'segment_links': segment_links})
 
 @login_required
 def display_snippets(request):
@@ -110,6 +108,11 @@ def display_snippets(request):
                     sentence_to_delete.delete()
                 except Sentence.DoesNotExist:
                     pass  # Handle the case where the sentence does not exist
+        # Extract the navigation parameters from the form
+        nav_frag1 = request.POST.get('nav_frag1', frag1).strip() or frag1
+        nav_place1 = request.POST.get('nav_place1', place1).strip() or place1
+        nav_frag2 = request.POST.get('nav_frag2', frag2).strip() or frag2
+        nav_place2 = request.POST.get('nav_place2', place2).strip() or place2
 
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
@@ -157,7 +160,7 @@ def display_snippets(request):
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
 
-        return redirect(f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
+        return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
     prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
     if int(place1) > 1:

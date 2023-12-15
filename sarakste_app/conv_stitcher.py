@@ -755,12 +755,14 @@ def is_valid_24_hour_time(time_string):
         pattern = r'^\d{1,2}[:.;%@&]\d{1,2}$'
         result = bool(re.match(pattern, time_string))
         if result == True:
+            print('Malformed timestamp seen. Has 2-4 digits separated by some separator...')
             returned_text = ""
 
     if len(time_string) <4:
         #print('= text =: =',time_string,'=')
         pattern = r'^([01]?[0-9]|2[0-3])[:.;80oOB%@&]'
         if bool(re.match(pattern, time_string[:3])):
+            print('3 character timestamp seen...')
             # we probably have a partial time_string.
             returned_text = ""
             result = True
