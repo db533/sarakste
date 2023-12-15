@@ -836,6 +836,15 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
                 if len(sentence_text) > 0:
                     # We have some text for a sentence, so need to save it with the time.
                     # Compute average confidence of the scanned text.
+                    if text != "":
+                        # Check that the text is a valid date format:
+                        pattern = r'^([01]?[0-9]|2[0-3])[:]([0-5][0-9])$'
+                        result = bool(re.match(pattern, time_string))
+                        if result == False:
+                            # The time is not in correct format.
+                            print('Aledgedly this is a time, but it is not formatted correctly. Wiping. Current format:', text,'.')
+                            text = ""
+
                     if print_debug:
                         print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text)
                     most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
