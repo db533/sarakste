@@ -232,9 +232,8 @@ def display_snippets(request):
         top_overlaps_as_second_snippet2 = []
 
     # Check if snippet1's place is the last in its segment and snippet2's place is 1
+    is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(place1)
     if snippet2 is not None:
-        is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(
-            place1)
         is_first_place_snippet2 = int(place2) == 1
     else:
         is_first_place_snippet2 = False
