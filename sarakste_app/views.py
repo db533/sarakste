@@ -194,11 +194,14 @@ def display_snippets(request):
             next_frag1 = int(frag1)+1
             next_place1 = 1
 
-    next_frag2, next_place2 = frag2, int(place2) + 1
-    if max_place is not None:
-        if next_place2 > max_place:
-            next_frag2 =int(frag2)+1
-            next_place2 = 1
+    if snippet2 is not None:
+        next_frag2, next_place2 = frag2, int(place2) + 1
+        if max_place is not None:
+            if next_place2 > max_place:
+                next_frag2 =int(frag2)+1
+                next_place2 = 1
+    else:
+        next_frag2, next_place2 = 0, 0
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
