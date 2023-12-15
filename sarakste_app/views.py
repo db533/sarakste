@@ -215,26 +215,29 @@ def display_snippets(request):
 
     if snippet1:
         top_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
-            '-overlaprowcount')[:3]
+            '-ssim_score')[:3]
         top_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
-            '-overlaprowcount')[:3]
+            '-ssim_score')[:3]
     else:
         top_overlaps_as_first_snippet1 = []
         top_overlaps_as_second_snippet1 = []
 
     if snippet2:
         top_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
-            '-overlaprowcount')[:3]
+            '-ssim_score')[:3]
         top_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
-            '-overlaprowcount')[:3]
+            '-ssim_score')[:3]
     else:
         top_overlaps_as_first_snippet2 = []
         top_overlaps_as_second_snippet2 = []
 
     # Check if snippet1's place is the last in its segment and snippet2's place is 1
-    is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(
-        place1)
-    is_first_place_snippet2 = int(place2) == 1
+    if snippet2 is not None:
+        is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(
+            place1)
+        is_first_place_snippet2 = int(place2) == 1
+    else:
+        is_first_place_snippet2 = False
 
     # Check if snippet1 and 2 are in the same segment and are consequetive place number.
     if snippet1 is not None and snippet2 is not None:
