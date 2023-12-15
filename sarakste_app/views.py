@@ -40,8 +40,8 @@ def display_snippets(request):
     # Extract parameters from the request, using default values if not provided
     frag1 = request.GET.get('frag1', min_segment)
     place1 = request.GET.get('place1', 1)
-    frag2 = request.GET.get('frag2', min_segment)
-    place2 = request.GET.get('place2', 2)
+    frag2 = request.GET.get('frag2')
+    place2 = request.GET.get('place2')
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
     # Fetch all existing summaries
