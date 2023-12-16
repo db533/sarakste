@@ -199,6 +199,7 @@ def display_snippets(request):
             if current_frag_index > 0:
                 # This is not the first segment.
                 prev_frag1 = segment_ids_list[current_frag_index-1]
+                prev_place1 = Snippet.objects.filter(segment=prev_frag1).aggregate(Max('place'))['place__max']
             else:
                 display_prev1 = False
 
@@ -227,6 +228,7 @@ def display_snippets(request):
             if current_frag_index > 0:
                 # This is not the first segment.
                 prev_frag2 = segment_ids_list[current_frag_index-1]
+                prev_place2 = Snippet.objects.filter(segment=prev_frag2).aggregate(Max('place'))['place__max']
             else:
                 # We were already at the first segment.
                 display_prev2 = False
