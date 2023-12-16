@@ -162,76 +162,113 @@ def display_snippets(request):
 
         return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
-    prev_snippet = Snippet.objects.filter(segment_id=frag1, place=F('place') - 1).first()
-    if int(place1) > 1:
-        prev_snippet_exists = True
+    # Get all segments
+    segment_ids = Segment.objects.order_by('id').values_list('id', flat=True)
+    # Convert the QuerySet to a list (optional, as QuerySets are iterable)
+    segment_ids_list = list(segment_ids)
+    print(segment_ids_list)
+
+    if segment_ids:
+        max_segment = segment_ids_list[-1]
+        min_segment = segment_ids_list[0]
     else:
-        prev_snippet_exists = False
+        max_segment = None  # or some default value, or handle the empty list case as needed
+        min_segment = None  # or some default value, or handle the empty list case as needed
 
-    # Logic for previous and next buttons
-    max_place = Snippet.objects.aggregate(Max('place'))['place__max']
-    max_segment = Snippet.objects.aggregate(Max('segment'))['segment__max']
 
-    # Previous button logic
-    prev_frag1, prev_place1 = frag1, int(place1) - 1
-    if prev_place1 < 1:
-        prev_frag1 = int(frag1)-1
-        prev_place1 = Snippet.objects.filter(segment_id=prev_frag1).aggregate(Max('place'))['place__max'] or 1
-        if prev_frag1 < 1:
-            prev_frag1 = 1
+    # Determine Previous and Next buttons for each snippet.
+    if snippet1 is not None:
+        # Previous button logic
+        prev_frag1, prev_place1 = frag1, int(place1) - 1
+        display_prev1 = True
+        if prev_place1 < 1:
+            # Find the location of this segment in the segment_ids list.
+            current_frag_index = segment_ids_list.index(int(frag1))
+            print('snippet1 current_frag_index:',current_frag_index)
+            if current_frag_index > 0:
+                # This is not the first segment.
+                prev_frag1 = segment_ids_list[current_frag_index-1]
 
-    prev_frag2, prev_place2 = frag1, int(place1)
-    #if prev_place2 < 1:
-    #    prev_frag2 = int(frag2)-1
-    #    prev_place2 = Snippet.objects.filter(segment_id=prev_frag2).aggregate(Max('place'))['place__max'] or 1
-    #    if prev_frag2 < 1:
-    #        prev_frag2 = 1
+            else:
+                # We were already at the first segment.
+                prev_frag1 = 0
+                prev_place1 = 0
+                display_prev1 = False
 
-    # Next button logic
-    next_frag1, next_place1 = frag1, int(place1) + 1
-    if max_place is not None:
-        if next_place1 > max_place:
-            next_frag1 = int(frag1)+1
-            next_place1 = 1
+        max_place_segment_1 = Snippet.objects.filter(segment=frag1).aggregate(Max('place'))['place__max']
+        # Next button logic
+        next_frag1, next_place1 = frag1, int(place1) + 1
+        display_next1 = True
+        if next_place1 > max_place_segment_1:
+            # Find the location of this segment in the segment_ids list.
+            current_frag_index = segment_ids_list.index(int(frag1))
+            if current_frag_index < len(segment_ids_list)-1:
+                # This is not the last segment.
+                next_frag1 = segment_ids_list[current_frag_index + 1]
+                next_place1 = 1
+            else:
+                # We were already at the first segment.
+                next_frag1 = 0
+                next_place1 = 0
+                display_next1 = False
 
     if snippet2 is not None:
+        # Previous button logic
+        prev_frag2, prev_place2 = frag2, int(place2) - 1
+        display_prev2 = True
+        if prev_place2 < 1:
+            # Find the location of this segment in the segment_ids list.
+            current_frag_index = segment_ids_list.index(int(frag2))
+            if current_frag_index > 0:
+                # This is not the first segment.
+                prev_frag2 = segment_ids_list[current_frag_index-1]
+            else:
+                # We were already at the first segment.
+                prev_frag2 = 0
+                prev_place2 = 0
+                display_prev2 = False
+
+        max_place_segment_2 = Snippet.objects.filter(segment=frag2).aggregate(Max('place'))['place__max']
+        # Next button logic
         next_frag2, next_place2 = frag2, int(place2) + 1
-        if max_place is not None:
-            if next_place2 > max_place:
-                next_frag2 =int(frag2)+1
+        display_next2 = True
+        if next_place2 > max_place_segment_2:
+            # Find the location of this segment in the segment_ids list.
+            current_frag_index = segment_ids_list.index(int(frag2))
+            if current_frag_index < len(segment_ids_list)-1:
+                # This is not the last segment.
+                next_frag2 = segment_ids_list[current_frag_index + 1]
                 next_place2 = 1
-    else:
-        next_frag2, next_place2 = 0, 0
+            else:
+                # We were already at the first segment.
+                next_frag2 = 0
+                next_place2 = 0
+                display_next2 = False
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
-    else:
-        sentences1 = []
-
-    if snippet2:
-        sentences2 = Sentence.objects.filter(snippet=snippet2).order_by('sequence')
-    else:
-        sentences2 = []
-
-    if snippet1:
         top_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
             '-ssim_score')[:3]
         top_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
             '-ssim_score')[:3]
     else:
+        sentences1 = []
         top_overlaps_as_first_snippet1 = []
         top_overlaps_as_second_snippet1 = []
 
     if snippet2:
+        sentences2 = Sentence.objects.filter(snippet=snippet2).order_by('sequence')
         top_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
             '-ssim_score')[:3]
         top_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
             '-ssim_score')[:3]
     else:
+        sentences2 = []
         top_overlaps_as_first_snippet2 = []
         top_overlaps_as_second_snippet2 = []
 
     # Check if snippet1's place is the last in its segment and snippet2's place is 1
+    # Check used to detmine if combined field should eb displayed.
     is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(place1)
     if snippet2 is not None:
         is_first_place_snippet2 = int(place2) == 1
@@ -239,6 +276,7 @@ def display_snippets(request):
         is_first_place_snippet2 = False
 
     # Check if snippet1 and 2 are in the same segment and are consequetive place number.
+    # Used to determine if they can be marked for splitting.
     if snippet1 is not None and snippet2 is not None:
         show_split_checkbox = (snippet1.segment == snippet2.segment)
         show_split_checkbox = show_split_checkbox and (snippet2.place - snippet1.place == 1)
@@ -248,16 +286,15 @@ def display_snippets(request):
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
         'user_snippet1': user_snippet1,'user_snippet2': user_snippet2,
-        'prev_snippet': prev_snippet,
         'edit_mode': edit_mode,  # Add edit mode to context
-        'prev_snippet_exists' : prev_snippet_exists,
         'frag1' : frag1, 'place1' : place1,
         'frag2' : frag2, 'place2' : place2,
+        'display_next1' : display_next1, 'display_prev1' : display_prev1,
+        'display_next2': display_next2, 'display_prev2': display_prev2,
         'prev_frag1': prev_frag1, 'prev_place1': prev_place1,
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
-        'max_place': str(max_place), 'max_segment': str(max_segment),
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
         'top_overlaps_as_first_snippet1': top_overlaps_as_first_snippet1,

@@ -465,8 +465,8 @@ def compare_for_best_match(earlier_image, later_image, best_rows, header_size, f
 
         # Append results to the list
         comparison_results.append((row, ssim, mse, later_segment_height))
-        SnippetOverlap.objects.create(first_snippet=first_snippet, second_snippet=second_snippet,
-                                      overlaprowcount=later_segment_height, mse_score=mse, ssim_score=ssim)
+        #SnippetOverlap.objects.create(first_snippet=first_snippet, second_snippet=second_snippet,
+        #                              overlaprowcount=later_segment_height, mse_score=mse, ssim_score=ssim)
 
     return comparison_results
 
@@ -841,7 +841,7 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
                     if text != "":
                         # Check that the text is a valid date format:
                         pattern = r'^([01]?[0-9]|2[0-3])[:]([0-5][0-9])$'
-                        result = bool(re.match(pattern, time_string))
+                        result = bool(re.match(pattern, text))
                         if result == False:
                             # The time is not in correct format.
                             print('Aledgedly this is a time, but it is not formatted correctly. Wiping. Current format:', text,'.')
@@ -1065,8 +1065,8 @@ while i < len(image_files_sorted) :
                 matching_row_count, ssim_score, mse_score, best_height = find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color, assumed_prior_snippet, new_snippet)
                 print('Comparing with', last_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
-                #SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
-                #                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
+                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
                 if ssim_score > best_ssim_score:
                     #count_matching_overlap_row_count = 1
                     #best_overlap_row_count = matching_row_count
@@ -1084,8 +1084,8 @@ while i < len(image_files_sorted) :
                 matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color, new_snippet, assumed_next_snippet)
                 print('Comparing with', first_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
-                #SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
-                #                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
+                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
                 if ssim_score > best_ssim_score:
                     #count_matching_overlap_row_count = 1
                     #best_overlap_row_count = matching_row_count

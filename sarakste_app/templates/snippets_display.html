@@ -29,39 +29,33 @@
         </tr>
         <tr>
             <td>
-                {% if frag1 == "1" and place1 == "1" %}
-                {% else %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% if display_prev1 %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
                 {% endif %}
                 <button type="submit">Saglabāt izmaiņas</button>
-                {% if frag2 == max_segment and place2 == max_place %}
-                {% else %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% if display_next1 %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Nākamā</a>
                 {% endif %}
-            </td>
-
-            <td>{% if show_combine_checkbox %}
+                {% if show_combine_checkbox %}
                     <input type="checkbox" name="combine" id="combine">
                     <label for="combine">Combine</label>
                 {% endif %}
+            </td>
+
+            <td>
                 {% if show_split_checkbox %}
                     <input type="checkbox" name="split" id="split">
                     <label for="split">Split segment</label>
                 {% endif %}
+                {% if display_prev2 %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% endif %}
+                {% if display_next2 %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% endif %}
             </td>
 
 
-        </tr>
-        <tr>
-            <!-- Checkboxes for marked field -->
-            <td>
-                Atzīmēts?
-                <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
-            </td>
-            <td>
-                Atzīmēts?
-                <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
-            </td>
         </tr>
         {% if edit_mode %}<tr>
             <td>
@@ -168,10 +162,14 @@
             <td>
                 Mīlēts?
                 <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
+                Atzīmēts?
+                <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
             </td>
             <td>
                 Mīlēts?
                 <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
+                Atzīmēts?
+                <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
             </td>
         </tr>
 
