@@ -32,13 +32,7 @@
                 {% if display_scroll_left %}
                     <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
                 {% endif %}
-                {% if display_prev1 and edit_mode %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Vienu iepriekšējo</a>
-                {% endif %}
                 <button type="submit">Saglabāt izmaiņas</button>
-                {% if display_next1 and edit_mode %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Vienu nākamo</a>
-                {% endif %}
                 {% if display_scroll_right %}
                     <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
                 {% endif %}
@@ -53,12 +47,6 @@
                 {% if show_split_checkbox %}
                     <input type="checkbox" name="split" id="split">
                     <label for="split">Split segment</label>
-                {% endif %}
-                {% if display_prev2 and edit_mode %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Vienu iepriekšējo</a>
-                {% endif %}
-                {% if display_next2 and edit_mode %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Vienu nākamo</a>
                 {% endif %}
             </td>
 
@@ -102,12 +90,26 @@
                 Navigate to:
                 <input type="text" name="nav_frag1" placeholder="Frag" size="3" value="{{ frag1 }}">
                 <input type="text" name="nav_place1" placeholder="Place" size="3" value="{{ place1 }}">
+                {% if display_prev1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}"><--</a>
+                {% endif %}
+                {% if display_next1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">--></a>
+                {% endif %}
+
             </td>
             <td>
                 <!-- Inputs for navigating from snippet2 -->
                 Navigate to:
                 <input type="text" name="nav_frag2" placeholder="Frag" size="3" value="{{ frag2 }}">
                 <input type="text" name="nav_place2" placeholder="Place" size="3" value="{{ place2 }}">
+                {% if display_prev2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}"><--</a>
+                {% endif %}
+                {% if display_next2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">--></a>
+                {% endif %}
+
             </td>
         </tr>
         <tr>
