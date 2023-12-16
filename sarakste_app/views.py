@@ -219,6 +219,8 @@ def display_snippets(request):
             else:
                 # We were already at the first segment.
                 display_next1 = False
+        if place1 == max_place_segment_1:
+            max_place_segment_1 = None
 
     if snippet2 is not None:
         # Previous button logic
@@ -261,6 +263,8 @@ def display_snippets(request):
         if current_frag_index < len(segment_ids_list) - 1:
             next_segment_frag2 = segment_ids_list[current_frag_index + 1]
             next_segment_place2 = 1
+        if place2 == max_place_segment_2:
+            max_place_segment_2 = None
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
@@ -315,6 +319,7 @@ def display_snippets(request):
         'next_frag2': next_frag2, 'next_place2': next_place2,
         'prior_segment_frag2': prior_segment_frag2, 'prior_segment_place2': prior_segment_place2,
         'next_segment_frag2': next_segment_frag2, 'next_segment_place2': next_segment_place2,
+        'max_place_segment_1' : max_place_segment_1, 'max_place_segment_2' : max_place_segment_2,
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
         'top_overlaps_as_first_snippet1': top_overlaps_as_first_snippet1,

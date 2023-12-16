@@ -96,6 +96,9 @@
                 {% if display_next1 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">--></a>
                 {% endif %}
+                {% if max_place_segment_1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ max_place_segment_1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}"> Last </a>
+                {% endif %}
 
             </td>
             <td>
@@ -106,14 +109,17 @@
                 {% if prior_segment_frag2 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prior_segment_frag2 }}&place2={{ prior_segment_place2 }}&edit={{ edit_mode }}">Prior segment </a>
                 {% endif %}
-                {% if next_segment_frag2 and edit_mode %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_segment_frag2 }}&place2={{ next_segment_place2 }}&edit={{ edit_mode }}">Next segment </a>
-                {% endif %}
                 {% if display_prev2 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}"><--</a>
                 {% endif %}
                 {% if display_next2 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">--></a>
+                {% endif %}
+                {% if max_place_segment_2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ frag2 }}&place2={{ max_place_segment_2 }}&edit={{ edit_mode }}"> Last </a>
+                {% endif %}
+                {% if next_segment_frag2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_segment_frag2 }}&place2={{ next_segment_place2 }}&edit={{ edit_mode }}">Next segment </a>
                 {% endif %}
 
             </td>
