@@ -35,13 +35,24 @@ def generate_segment_links(request):
 @login_required
 def display_snippets(request):
 
-    min_segment = Snippet.objects.aggregate(Min('segment'))['segment__min']
+    # Get all segments
+    segment_ids = Segment.objects.order_by('id').values_list('id', flat=True)
+    # Convert the QuerySet to a list (optional, as QuerySets are iterable)
+    segment_ids_list = list(segment_ids)
+    print(segment_ids_list)
+
+    if segment_ids:
+        max_segment = segment_ids_list[-1]
+        min_segment = segment_ids_list[0]
+    else:
+        max_segment = None  # or some default value, or handle the empty list case as needed
+        min_segment = None  # or some default value, or handle the empty list case as needed
 
     # Extract parameters from the request, using default values if not provided
     frag1 = request.GET.get('frag1', min_segment)
     place1 = request.GET.get('place1', 1)
-    frag2 = request.GET.get('frag2')
-    place2 = request.GET.get('place2')
+    frag2 = request.GET.get('frag2', None)
+    place2 = request.GET.get('place2', None)
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
     # Fetch all existing summaries
@@ -108,6 +119,7 @@ def display_snippets(request):
                     sentence_to_delete.delete()
                 except Sentence.DoesNotExist:
                     pass  # Handle the case where the sentence does not exist
+
         # Extract the navigation parameters from the form
         nav_frag1 = request.POST.get('nav_frag1', frag1).strip() or frag1
         nav_place1 = request.POST.get('nav_place1', place1).strip() or place1
@@ -161,19 +173,6 @@ def display_snippets(request):
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
 
         return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
-
-    # Get all segments
-    segment_ids = Segment.objects.order_by('id').values_list('id', flat=True)
-    # Convert the QuerySet to a list (optional, as QuerySets are iterable)
-    segment_ids_list = list(segment_ids)
-    print(segment_ids_list)
-
-    if segment_ids:
-        max_segment = segment_ids_list[-1]
-        min_segment = segment_ids_list[0]
-    else:
-        max_segment = None  # or some default value, or handle the empty list case as needed
-        min_segment = None  # or some default value, or handle the empty list case as needed
 
     # Determine Previous and Next buttons for each snippet.
     display_next1 = False
