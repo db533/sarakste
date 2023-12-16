@@ -177,9 +177,9 @@ def display_snippets(request):
 
     # Determine Previous and Next buttons for each snippet.
     display_next1 = False
-    display_place1 = False
+    display_prev1 = False
     display_next2 = False
-    display_place2 = False
+    display_prev2 = False
     if snippet1 is not None:
         # Previous button logic
         prev_frag1, prev_place1 = frag1, int(place1) - 1
