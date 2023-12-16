@@ -179,6 +179,8 @@ def display_snippets(request):
     display_prev1 = False
     display_next2 = False
     display_prev2 = False
+    display_scroll_left = False
+    display_scroll_right = False
     prev_frag1 = 0
     prev_place1 = 0
     next_frag1 = 0
@@ -187,6 +189,14 @@ def display_snippets(request):
     prev_place2 = 0
     next_frag2 = 0
     next_place2 = 0
+    scroll_left_frag1 = 0
+    scroll_left_place1 = 0
+    scroll_right_frag1 = 0
+    scroll_right_place1 = 0
+    scroll_left_frag2 = 0
+    scroll_left_place2 = 0
+    scroll_right_frag2 = 0
+    scroll_right_place2 = 0
 
     if snippet1 is not None:
         # Previous button logic
@@ -202,6 +212,9 @@ def display_snippets(request):
                 prev_place1 = Snippet.objects.filter(segment=prev_frag1).aggregate(Max('place'))['place__max']
             else:
                 display_prev1 = False
+        if display_prev1 == True:
+            scroll_left_frag1 = prev_frag1
+            scroll_left_place1 = prev_place1
 
         max_place_segment_1 = Snippet.objects.filter(segment=frag1).aggregate(Max('place'))['place__max']
         # Next button logic
@@ -217,6 +230,9 @@ def display_snippets(request):
             else:
                 # We were already at the first segment.
                 display_next1 = False
+        if display_next1 == True:
+            scroll_right_frag1 = next_frag1
+            scroll_right_place1 = next_place1
 
     if snippet2 is not None:
         # Previous button logic
@@ -232,6 +248,13 @@ def display_snippets(request):
             else:
                 # We were already at the first segment.
                 display_prev2 = False
+        if display_prev2 == True:
+            scroll_left_frag2 = prev_frag2
+            scroll_left_place2 = prev_place2
+            if display_prev1 == True:
+                # We have both 2 snippets and both have prev snippets, so can display a scroll left link.
+                display_scroll_left = True
+
 
         max_place_segment_2 = Snippet.objects.filter(segment=frag2).aggregate(Max('place'))['place__max']
         # Next button logic
@@ -247,6 +270,12 @@ def display_snippets(request):
             else:
                 # We were already at the first segment.
                 display_next2 = False
+        if display_next2 == True:
+            scroll_right_frag2 = next_frag2
+            scroll_right_place2 = next_place2
+            if display_next1 == True:
+                # We have both 2 snippets and both have next snippets, so can display a scroll right link.
+                display_scroll_right = True
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
@@ -294,10 +323,15 @@ def display_snippets(request):
         'frag2' : frag2, 'place2' : place2,
         'display_next1' : display_next1, 'display_prev1' : display_prev1,
         'display_next2': display_next2, 'display_prev2': display_prev2,
+        'display_scroll_right' : display_scroll_right, 'display_scroll_left' : display_scroll_left,
         'prev_frag1': prev_frag1, 'prev_place1': prev_place1,
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
+        'scroll_left_frag1': scroll_left_frag1, 'scroll_left_place1': scroll_left_place1,
+        'scroll_right_frag1': scroll_right_frag1, 'scroll_right_place1': scroll_right_place1,
+        'scroll_left_frag2': scroll_left_frag2, 'scroll_left_place2': scroll_left_place2,
+        'scroll_right_frag2': scroll_right_frag2, 'scroll_right_place2': scroll_right_place2,
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
         'top_overlaps_as_first_snippet1': top_overlaps_as_first_snippet1,

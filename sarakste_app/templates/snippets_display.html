@@ -29,13 +29,20 @@
         </tr>
         <tr>
             <td>
-                {% if display_prev1 %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% if display_scroll_left %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% endif %}
+                {% if display_prev1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Vienu iepriekšējo</a>
                 {% endif %}
                 <button type="submit">Saglabāt izmaiņas</button>
-                {% if display_next1 %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% if display_next1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Vienu nākamo</a>
                 {% endif %}
+                {% if display_scroll_right %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% endif %}
+
                 {% if show_combine_checkbox %}
                     <input type="checkbox" name="combine" id="combine">
                     <label for="combine">Combine</label>
@@ -47,11 +54,11 @@
                     <input type="checkbox" name="split" id="split">
                     <label for="split">Split segment</label>
                 {% endif %}
-                {% if display_prev2 %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
+                {% if display_prev2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Vienu iepriekšējo</a>
                 {% endif %}
-                {% if display_next2 %}
-                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
+                {% if display_next2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Vienu nākamo</a>
                 {% endif %}
             </td>
 
