@@ -180,6 +180,15 @@ def display_snippets(request):
     display_prev1 = False
     display_next2 = False
     display_prev2 = False
+    prev_frag1 = 0
+    prev_place1 = 0
+    next_frag1 = 0
+    next_place1 = 0
+    prev_frag2 = 0
+    prev_place2 = 0
+    next_frag2 = 0
+    next_place2 = 0
+
     if snippet1 is not None:
         # Previous button logic
         prev_frag1, prev_place1 = frag1, int(place1) - 1
@@ -191,11 +200,7 @@ def display_snippets(request):
             if current_frag_index > 0:
                 # This is not the first segment.
                 prev_frag1 = segment_ids_list[current_frag_index-1]
-
             else:
-                # We were already at the first segment.
-                prev_frag1 = 0
-                prev_place1 = 0
                 display_prev1 = False
 
         max_place_segment_1 = Snippet.objects.filter(segment=frag1).aggregate(Max('place'))['place__max']
@@ -211,8 +216,6 @@ def display_snippets(request):
                 next_place1 = 1
             else:
                 # We were already at the first segment.
-                next_frag1 = 0
-                next_place1 = 0
                 display_next1 = False
 
     if snippet2 is not None:
@@ -227,8 +230,6 @@ def display_snippets(request):
                 prev_frag2 = segment_ids_list[current_frag_index-1]
             else:
                 # We were already at the first segment.
-                prev_frag2 = 0
-                prev_place2 = 0
                 display_prev2 = False
 
         max_place_segment_2 = Snippet.objects.filter(segment=frag2).aggregate(Max('place'))['place__max']
@@ -244,8 +245,6 @@ def display_snippets(request):
                 next_place2 = 1
             else:
                 # We were already at the first segment.
-                next_frag2 = 0
-                next_place2 = 0
                 display_next2 = False
 
     if snippet1:
