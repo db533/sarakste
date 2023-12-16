@@ -175,8 +175,11 @@ def display_snippets(request):
         max_segment = None  # or some default value, or handle the empty list case as needed
         min_segment = None  # or some default value, or handle the empty list case as needed
 
-
     # Determine Previous and Next buttons for each snippet.
+    display_next1 = False
+    display_place1 = False
+    display_next2 = False
+    display_place2 = False
     if snippet1 is not None:
         # Previous button logic
         prev_frag1, prev_place1 = frag1, int(place1) - 1
