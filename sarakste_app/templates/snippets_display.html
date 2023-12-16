@@ -103,6 +103,12 @@
                 Navigate to:
                 <input type="text" name="nav_frag2" placeholder="Frag" size="3" value="{{ frag2 }}">
                 <input type="text" name="nav_place2" placeholder="Place" size="3" value="{{ place2 }}">
+                {% if prior_segment_frag2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prior_segment_frag2 }}&place2={{ prior_segment_place2 }}&edit={{ edit_mode }}">Prior segment </a>
+                {% endif %}
+                {% if next_segment_frag2 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ next_segment_frag2 }}&place2={{ next_segment_place2 }}&edit={{ edit_mode }}">Next segment </a>
+                {% endif %}
                 {% if display_prev2 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}"><--</a>
                 {% endif %}
