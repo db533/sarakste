@@ -193,6 +193,8 @@ def display_snippets(request):
     prior_segment_place2 = None
     next_segment_frag2 = None
     next_segment_place2 = None
+    max_place_segment_1 = None
+    max_place_segment_2 = None
 
     if snippet1 is not None:
         # Previous button logic
