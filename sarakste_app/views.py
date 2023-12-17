@@ -189,6 +189,8 @@ def display_snippets(request):
     prev_place2 = 0
     next_frag2 = 0
     next_place2 = 0
+    prior_segment_frag2 = None
+    prior_segment_place2 = None
 
     if snippet1 is not None:
         # Previous button logic
