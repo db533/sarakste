@@ -5,7 +5,7 @@ import sys
 from django.db.models import Max
 import re
 from django.db.models import Q
-from datetime import datetime
+from datetime import datetime, timedelta
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as compare_ssim
@@ -18,7 +18,7 @@ django.setup()
 
 # Launch options
 delete_overlaps = False
-delete_all = True
+delete_all = False
 update_local_database = False
 
 
@@ -1141,4 +1141,11 @@ while i < len(image_files_sorted) :
         new_snippet.save()
     else:
         print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.')
+
+        # Check if time_diff is blank. Might mean that the snippetoverlay is older and needs to have time_diff added.
+        current_snippetoverlay = SnippetOverlap.objects.get(first_snippet=new_snippet)
+        if current_snippetoverlay.time_diff is None:
+            current_snippetoverlay.save()
+
+
     i += 1

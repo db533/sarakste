@@ -274,25 +274,37 @@ def display_snippets(request):
 
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
-        top_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
-            '-ssim_score')[:3]
-        top_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
-            '-ssim_score')[:3]
+        top_ssim_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
+            '-ssim_score')[:5]
+        top_ssim_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
+            '-ssim_score')[:5]
+        top_time_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
+            'time_diff')[:5]
+        top_time_overlaps_as_second_snippet1 = SnippetOverlap.objects.filter(first_snippet=snippet1).order_by(
+            'time_diff')[:5]
     else:
         sentences1 = []
-        top_overlaps_as_first_snippet1 = []
-        top_overlaps_as_second_snippet1 = []
+        top_ssim_overlaps_as_first_snippet1 = []
+        top_ssim_overlaps_as_second_snippet1 = []
+        top_time_overlaps_as_first_snippet1 = []
+        top_time_overlaps_as_second_snippet1 = []
 
     if snippet2:
         sentences2 = Sentence.objects.filter(snippet=snippet2).order_by('sequence')
-        top_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
-            '-ssim_score')[:3]
-        top_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
-            '-ssim_score')[:3]
+        top_ssim_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
+            '-ssim_score')[:5]
+        top_ssim_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
+            '-ssim_score')[:5]
+        top_time_overlaps_as_first_snippet2 = SnippetOverlap.objects.filter(second_snippet=snippet2).order_by(
+            'time_diff')[:5]
+        top_time_overlaps_as_second_snippet2 = SnippetOverlap.objects.filter(first_snippet=snippet2).order_by(
+            'time_diff')[:5]
     else:
         sentences2 = []
-        top_overlaps_as_first_snippet2 = []
-        top_overlaps_as_second_snippet2 = []
+        top_ssim_overlaps_as_first_snippet2 = []
+        top_ssim_overlaps_as_second_snippet2 = []
+        top_time_overlaps_as_first_snippet2 = []
+        top_time_overlaps_as_second_snippet2 = []
 
     # Check if snippet1's place is the last in its segment and snippet2's place is 1
     # Check used to detmine if combined field should eb displayed.
@@ -328,10 +340,14 @@ def display_snippets(request):
         'max_place_segment_1' : max_place_segment_1, 'max_place_segment_2' : max_place_segment_2,
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
-        'top_overlaps_as_first_snippet1': top_overlaps_as_first_snippet1,
-        'top_overlaps_as_second_snippet1': top_overlaps_as_second_snippet1,
-        'top_overlaps_as_first_snippet2': top_overlaps_as_first_snippet2,
-        'top_overlaps_as_second_snippet2': top_overlaps_as_second_snippet2,
+        'top_ssim_overlaps_as_first_snippet1': top_ssim_overlaps_as_first_snippet1,
+        'top_ssim_overlaps_as_second_snippet1': top_ssim_overlaps_as_second_snippet1,
+        'top_ssim_overlaps_as_first_snippet2': top_ssim_overlaps_as_first_snippet2,
+        'top_ssim_overlaps_as_second_snippet2': top_ssim_overlaps_as_second_snippet2,
+        'top_time_overlaps_as_first_snippet1': top_time_overlaps_as_first_snippet1,
+        'top_time_overlaps_as_second_snippet1': top_time_overlaps_as_second_snippet1,
+        'top_time_overlaps_as_first_snippet2': top_time_overlaps_as_first_snippet2,
+        'top_time_overlaps_as_second_snippet2': top_time_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
         'show_split_checkbox': show_split_checkbox,
     }

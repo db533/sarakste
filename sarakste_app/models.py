@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import datetime, timedelta, time
 
 class Segment(models.Model):
     length = models.IntegerField(null=True, default=0)
@@ -92,6 +93,34 @@ class SnippetOverlap(models.Model):
     overlaprowcount = models.IntegerField(default=0, help_text='The number of rows from this image that overlap on the next image.')
     mse_score = models.DecimalField(max_digits=10, decimal_places=1, null=True)
     ssim_score = models.DecimalField(max_digits=6, decimal_places=4, null=True)
+    time_diff = models.TimeField(help_text=('Laiks atšķirība'),null=True,blank=True)
 
+    def compute_time_diff(self):
+        # Check if either time is None
+        if not self.first_snippet.last_time or not self.second_snippet.first_time:
+            self.time_diff = None
+            return
+
+        # Convert time fields to datetime objects for calculation
+        datetime_format = "%H:%M:%S"
+        last_time = datetime.strptime(str(self.first_snippet.last_time), datetime_format)
+        first_time = datetime.strptime(str(self.second_snippet.first_time), datetime_format)
+
+        # Check if the time indicates next day
+        if first_time < last_time:
+            first_time += timedelta(days=1)
+
+        # Calculate time difference
+        time_diff = first_time - last_time
+
+        # Convert time difference to time object
+        total_seconds = int(time_diff.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        self.time_diff = time(hour=hours, minute=minutes, second=seconds)  # Corrected
+
+    def save(self, *args, **kwargs):
+        self.compute_time_diff()  # Compute time_diff before saving
+        super().save(*args, **kwargs)  # Call the "real" save() method.
     def __str__(self):
         return f"{self.current_snippet.filename} overlaps {self.overlapping_snippet.filename}: {self.overlaprowcount} rows"
