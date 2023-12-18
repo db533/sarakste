@@ -118,8 +118,12 @@ def display_snippets(request):
         user_snippet1 = None
 
     try:
-        snippet2 = Snippet.objects.get(segment_id=frag2, place=place2)
-        user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
+        if frag2 and place2:
+            snippet2 = Snippet.objects.get(segment_id=frag2, place=place2)
+            user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
+        else:
+            snippet2 = None
+            user_snippet2 = None
     except Snippet.DoesNotExist:
         snippet2 = None
         user_snippet2 = None
