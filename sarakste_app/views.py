@@ -118,7 +118,7 @@ def display_snippets(request):
         user_snippet1 = None
 
     try:
-        if frag2 is not 'None' and place2 is not 'None':
+        if frag2 != 'None' and place2 != 'None':
             snippet2 = Snippet.objects.get(segment_id=frag2, place=place2)
             user_snippet2, _ = UserSnippet.objects.get_or_create(user=request.user, snippet=snippet2)
         else:
