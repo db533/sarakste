@@ -461,7 +461,7 @@ def compare_for_best_match(earlier_image, later_image, best_rows, header_size, f
 
         # Calculate MSE and SSIM
         mse, ssim = cv2_is_match(earlier_segment_np, later_segment_np, later_segment.height)
-        print('rows:',row,'mse:',mse, 'ssim:',ssim)
+        #print('rows:',row,'mse:',mse, 'ssim:',ssim)
 
         # Append results to the list
         comparison_results.append((row, ssim, mse, later_segment_height))
@@ -810,7 +810,7 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
         reply_offset = 17
 
     # Loop through each sentence found in the image and create a sentence in the database.
-    print_debug = True
+    print_debug = False
     print('Looping through OCR text to create sentences...')
     new_setence = False
     sequence = 0
@@ -913,7 +913,10 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
             else:
                 print('Text box did not match any expected positions.')
         else:
-            print('Text matched a speaker label in reply_to text. Skipping.')
+            if print_debug:
+                print('Text matched a speaker label in reply_to text. Skipping.')
+            else:
+                pass
     # Have completed looping through scanned text.
     # If sentence_text is not None, then there is unsaved sentence that needs to be saved.
     if len(sentence_text) > 0:
@@ -1003,9 +1006,11 @@ image_count = len(image_files)
 # User interaction loop
 #sequence_number = len(confirmed_sequences) + 1
 i = 0
+snippet_already_mapped = False
 while i < len(image_files_sorted) :
-    # Update the first and last image names for each sequence.
-    first_snippet_filenames, last_snippet_filenames = recompute_sequences()
+    if snippet_already_mapped == False:
+        # Update the first and last image names for each sequence.
+        first_snippet_filenames, last_snippet_filenames = recompute_sequences()
     # Check if the image already is processed as a snippet in the database
     filename = image_files_sorted[i]
 
@@ -1036,6 +1041,7 @@ while i < len(image_files_sorted) :
     if not SnippetOverlap.objects.filter(first_snippet=new_snippet).exists():
         # We do not have snippet overlaps defined.
         # If this is the very first snippet, then this is OK.
+        print('Adding', filename,'...')
         if i == 0:
             print('First snippet. Setting to a segment without looking for overlaps.')
             if Segment.objects.count() == 0:
@@ -1059,14 +1065,18 @@ while i < len(image_files_sorted) :
             #other_image_position = []
             count_matching_overlap_row_count=0
             # first try to match to the end of existing segments.
-            print('Comparing to end of segments...')
+            print('Comparing to end of',len(last_snippet_filenames),'segments...')
             for last_filename in last_snippet_filenames:
                 assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
                 matching_row_count, ssim_score, mse_score, best_height = find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color, assumed_prior_snippet, new_snippet)
-                print('Comparing with', last_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
+                #print('Comparing with', last_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
-                SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
-                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                try:
+                    SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
+                                                  overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                except:
+                    print('Failed to create SnippetOverlap.')
+                    print()
                 if ssim_score > best_ssim_score:
                     #count_matching_overlap_row_count = 1
                     #best_overlap_row_count = matching_row_count
@@ -1078,11 +1088,11 @@ while i < len(image_files_sorted) :
                     other_image_position = 'prior'
                     best_mse_score = mse_score
             # then try to match to the start of existing segments.
-            print('Comparing to start of segments...')
+            print('Comparing to start of',len(first_snippet_filenames),'segments...')
             for first_filename in first_snippet_filenames:
                 assumed_next_snippet = Snippet.objects.get(filename=first_filename)
                 matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color, new_snippet, assumed_next_snippet)
-                print('Comparing with', first_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
+                #print('Comparing with', first_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                 # Save the overlap to the database.
                 SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
                                               overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
@@ -1141,15 +1151,15 @@ while i < len(image_files_sorted) :
         new_snippet.save()
     else:
         print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.')
-
+        snippet_already_mapped = True
         # Check if time_diff is blank. Might mean that the snippetoverlay is older and needs to have time_diff added.
-        current_overlaps = SnippetOverlap.objects.filter(first_snippet=new_snippet)
-        for current_snippetoverlay in current_overlaps:
-            if current_snippetoverlay.time_diff is None:
-                current_snippetoverlay.save()
-        current_overlaps = SnippetOverlap.objects.filter(second_snippet=new_snippet)
-        for current_snippetoverlay in current_overlaps:
-            if current_snippetoverlay.time_diff is None:
-                current_snippetoverlay.save()
-
+        #current_overlaps = SnippetOverlap.objects.filter(first_snippet=new_snippet)
+        #for current_snippetoverlay in current_overlaps:
+        #    if current_snippetoverlay.time_diff is None:
+        #        current_snippetoverlay.save()
+        #current_overlaps = SnippetOverlap.objects.filter(second_snippet=new_snippet)
+        #for current_snippetoverlay in current_overlaps:
+        #    if current_snippetoverlay.time_diff is None:
+        #        current_snippetoverlay.save()
+    print('Completed image', i,'of',image_count, '=',int(i*100/image_count),'%')
     i += 1

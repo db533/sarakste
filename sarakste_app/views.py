@@ -2,6 +2,13 @@ from django.shortcuts import render, get_object_or_404
 from .models import *
 from django.contrib.auth.decorators import login_required
 from django.db.models import F, Max, Min
+from .forms import SearchForm
+from django.db import connection
+import environ
+env = environ.Env()
+environ.Env.read_env(overwrite=True)
+
+update_local_database = env.bool('update_local_database', default=False)
 
 def login_view(request):
     username = request.POST.get('username')
@@ -31,6 +38,48 @@ def generate_segment_links(request):
                 url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
             segment_links.append((segment.id, url, length))
     return render(request, 'segment_list.html', {'segment_links': segment_links})
+
+@login_required
+def search(request):
+    form = SearchForm(request.GET or None)
+    snippets = []
+    sentences = []
+
+    if update_local_database:
+        db_name = env.str('MYSQL_LOCAL_DB_NAME')
+    else:
+        db_name = env.str('MYSQL_PROD_DB_NAME')
+
+    sentence_table = db_name + '.sarakste_app_sentence'
+    snippet_sentence_join = db_name + '.sarakste_app_snippet_sentences'
+    snippet_table = db_name + '.sarakste_app_snippet'
+    print('sentence_table:', sentence_table)
+    print('snippet_table:', snippet_table)
+
+    if request.GET and form.is_valid():  # Check if the form is valid
+        query = form.cleaned_data['query']
+
+        # Raw SQL query to find matching sentences and their corresponding snippets
+        with connection.cursor() as cursor:
+            sql = f"""
+                  SELECT DISTINCT sent.id, snip.id 
+                  FROM {sentence_table} sent
+                  INNER JOIN {snippet_table} snip ON sent.snippet_id = snip.id
+                  WHERE MATCH(sent.text) AGAINST (%s IN NATURAL LANGUAGE MODE);
+                  """
+            cursor.execute(sql, [query])
+            results = cursor.fetchall()
+
+        # Processing results to fetch sentences and snippets
+        sentence_ids = [row[0] for row in results]
+        snippet_ids = {row[1] for row in results}  # Using a set to avoid duplicates
+
+        sentences = Sentence.objects.filter(id__in=sentence_ids)
+        snippets = Snippet.objects.filter(id__in=snippet_ids)
+
+    return render(request, 'search.html', {'form': form, 'snippets': snippets, 'sentences': sentences})
+
+
 
 @login_required
 def display_snippets(request):
@@ -353,3 +402,4 @@ def display_snippets(request):
     }
 
     return render(request, 'snippets_display.html', context)
+

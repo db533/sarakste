@@ -34,6 +34,8 @@ urlpatterns += [
     path('lasit/', display_snippets, name='display_snippets'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('segments/', generate_segment_links, name='generate_segment_links'),
+    path('meklet/', search, name='search'),
+
 ]
 
 # Use static() to add URL mapping to serve static files during development (only)
