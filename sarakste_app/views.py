@@ -41,6 +41,10 @@ def generate_segment_links(request):
 
 @login_required
 def search(request):
+
+    # SQL command performed to add Full Text index to text field of Sentence model:
+    # ALTER TABLE saknesar_sarakste.sarakste_app_sentence ADD FULLTEXT INDEX idx_fulltext (text);
+
     form = SearchForm(request.GET or None)
     snippets = []
     sentences = []
@@ -220,7 +224,10 @@ def display_snippets(request):
             place2 = int(place1) + 1
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
-
+        if snippet2:
+            redirect_link = f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true'
+        else:
+            f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&edit={edit_mode}&saved=true'
         return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
     # Determine Previous and Next buttons for each snippet.
