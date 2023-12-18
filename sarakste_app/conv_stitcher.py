@@ -1143,9 +1143,13 @@ while i < len(image_files_sorted) :
         print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.')
 
         # Check if time_diff is blank. Might mean that the snippetoverlay is older and needs to have time_diff added.
-        current_snippetoverlay = SnippetOverlap.objects.get(first_snippet=new_snippet)
-        if current_snippetoverlay.time_diff is None:
-            current_snippetoverlay.save()
-
+        current_overlaps = SnippetOverlap.objects.filter(first_snippet=new_snippet)
+        for current_snippetoverlay in current_overlaps:
+            if current_snippetoverlay.time_diff is None:
+                current_snippetoverlay.save()
+        current_overlaps = SnippetOverlap.objects.filter(second_snippet=new_snippet)
+        for current_snippetoverlay in current_overlaps:
+            if current_snippetoverlay.time_diff is None:
+                current_snippetoverlay.save()
 
     i += 1
