@@ -6,20 +6,15 @@
     <button type="submit">Search</button>
 </form>
 
-{% if sentences %}
-    <h2>Matching Sentences</h2>
+{% if search_results %}
+    <h2>Search Results</h2>
     <ul>
-        {% for sentence in sentences %}
-            <li><a href="{% url 'display_snippets' %}?frag1={{ sentence.snippet.segment.id }}&place1={{ sentence.snippet.place }}&edit=True">{{ sentence.text }}</a></li>
-        {% endfor %}
-    </ul>
-{% endif %}
-
-{% if snippets %}
-    <h2>Snippets Containing the Sentences</h2>
-    <ul>
-        {% for snippet in snippets %}
-            <li>{{ snippet.id }}: <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment.id }}&place1={{ snippet.place }}&edit=True">{{ snippet.filename }}</a></li>
+        {% for result in search_results %}
+            <li>
+                Relevance Score: {{ result.score }} -
+                Sentence: <a href="{% url 'display_snippets' %}?frag1={{ result.sentence.snippet.segment.id }}&place1={{ result.sentence.snippet.place }}&edit=True">{{ result.sentence.text }}</a> -
+                Snippet: {{ result.snippet.id }}: {{ result.snippet.filename }}
+            </li>
         {% endfor %}
     </ul>
 {% endif %}

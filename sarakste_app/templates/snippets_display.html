@@ -159,7 +159,42 @@
                     Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }} <u>time diff: {{ overlap.time_diff|date:"H:i" }}</u><br>
                 {% endfor %}
             </td>
-
+        </tr>
+        <tr>
+            <td>
+                Search phrase: <input type="text" name="search_left" size="40" value="{{ search_phrase_left }}"><br>
+                    {% if search_snippets_left %}
+                        <p>Search Results:</p>
+                        <ul>
+                             {% for id, snippet in search_snippets_left.items %}
+                                <li>
+                                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet.segment_id }}&place2={{ snippet.place }}&edit=True">
+                                        Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No search results found.</p>
+                    {% endif %}
+            </td>
+            <td>
+                Search phrase: <input type="text" name="search_right" size="40" value="{{ search_phrase_right }}"><br>
+                    {% if search_snippets_right %}
+                        <p>Search Results:</p>
+                        <ul>
+                             {% for id, snippet in search_snippets_right.items %}
+                                <li>
+                                    <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment_id }}&place1={{ snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">
+                                        Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No search results found.</p>
+                    {% endif %}
+            </td>
         </tr>
         {% endif %}
         <tr>

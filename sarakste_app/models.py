@@ -123,4 +123,4 @@ class SnippetOverlap(models.Model):
         self.compute_time_diff()  # Compute time_diff before saving
         super().save(*args, **kwargs)  # Call the "real" save() method.
     def __str__(self):
-        return f"{self.current_snippet.filename} overlaps {self.overlapping_snippet.filename}: {self.overlaprowcount} rows"
+        return f"{self.id}"
