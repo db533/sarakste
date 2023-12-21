@@ -90,12 +90,12 @@ def display_snippets(request):
     segment_ids_list = list(segment_ids)
     print(segment_ids_list)
 
-    #if segment_ids:
-    #    max_segment = segment_ids_list[-1]
-    #    min_segment = segment_ids_list[0]
-    #else:
-    #    max_segment = None  # or some default value, or handle the empty list case as needed
-    #    min_segment = None  # or some default value, or handle the empty list case as needed
+    if segment_ids:
+        max_segment = segment_ids_list[-1]
+        min_segment = segment_ids_list[0]
+    else:
+        max_segment = None  # or some default value, or handle the empty list case as needed
+        min_segment = None  # or some default value, or handle the empty list case as needed
     # Initialize variable
     search_left = None
     # Check if we have the data in the session
