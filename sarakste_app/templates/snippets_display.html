@@ -168,7 +168,7 @@
         <tr>
             <td>
                 Search phrase: <input type="text" name="search_left" size="40" value="{{ search_phrase_left }}"><br>
-                    {% if search_snippets_left %}
+                    {% if search_dict_left %}
                         <p>Search Results:</p>
                         <ul>
                              {% for id, snippet in search_dict_left.items %}
@@ -185,7 +185,7 @@
             </td>
             <td>
                 Search phrase: <input type="text" name="search_right" size="40" value="{{ search_phrase_right }}"><br>
-                    {% if search_snippets_right %}
+                    {% if search_dict_right %}
                         <p>Search Results:</p>
                         <ul>
                              {% for id, snippet in search_dict_right.items %}
