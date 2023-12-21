@@ -90,6 +90,9 @@
                 Navigate to:
                 <input type="text" name="nav_frag1" placeholder="Frag" size="3" value="{{ frag1 }}">
                 <input type="text" name="nav_place1" placeholder="Place" size="3" value="{{ place1 }}">
+                {% if prior_segment_frag1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ prior_segment_frag1 }}&place1={{ prior_segment_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Prior segment </a>
+                {% endif %}
                 {% if display_prev1 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}"><--</a>
                 {% endif %}
@@ -99,7 +102,9 @@
                 {% if max_place_segment_1 and edit_mode %}
                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ max_place_segment_1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}"> Last </a>
                 {% endif %}
-
+                {% if next_segment_frag1 and edit_mode %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ next_segment_frag1 }}&place1={{ next_segment_place1 }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Next segment </a>
+                {% endif %}
             </td>
             <td>
                 <!-- Inputs for navigating from snippet2 -->

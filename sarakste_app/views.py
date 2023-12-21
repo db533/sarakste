@@ -26,7 +26,7 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def generate_segment_links(request):
-    segments = Segment.objects.all()
+    segments = Segment.objects.all().order_by('id')
     segment_links = []
     for segment in segments:
         snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
@@ -99,24 +99,26 @@ def display_snippets(request):
     # Initialize variable
     search_left = None
     # Check if we have the data in the session
-    stored_snippets = request.session.get('search_snippets_left', None)
+    snippets_dict_left = request.session.get('search_snippets_left', None)
     search_phrase_left = request.session.get('search_phrase_left', '')
-    stored_snippets_right = request.session.get('search_snippets_right', None)
+    snippets_dict_right = request.session.get('search_snippets_right', None)
     search_phrase_right = request.session.get('search_phrase_right', '')
+    print('Data retrieved from session:')
+    print('search_phrase_left:',search_phrase_left, 'search_phrase_right:',search_phrase_right,'snippets_dict_left:',snippets_dict_left, 'stored_snippets_right:',snippets_dict_right)
 
-    if stored_snippets:
+    if snippets_dict_left:
         # Use the stored data
-        search_snippets_left = stored_snippets
+        search_snippets_left = snippets_dict_left
     else:
         # Initialize as None or perform the search as needed
         search_snippets_left = None
 
-    if stored_snippets_right:
+    if snippets_dict_right:
         # Use the stored data
-        search_snippets_right = stored_snippets_right
+        search_snippets_right = snippets_dict_right
     else:
         # Initialize as None or perform the search as needed
-        search_snippets_right = None
+        snippets_dict_right = None
 
     # Extract parameters from the request, using default values if not provided
     frag1 = request.GET.get('frag1', min_segment)
@@ -160,6 +162,11 @@ def display_snippets(request):
             snippet1.save()
             search_left = request.POST.get('search_left', '').strip()
             print("Search Term - left:", search_left)
+            if search_left == '':
+                if 'search_snippets_left' in request.session:
+                    del request.session['search_snippets_left']
+                if 'search_phrase_left' in request.session:
+                    del request.session['search_phrase_left']
             if search_left:
                 # We have a search phrase passed for the left image.
                 if update_local_database:
@@ -190,10 +197,10 @@ def display_snippets(request):
 
                 search_snippets_left = Snippet.objects.filter(id__in=snippet_ids)
                 print("Snippets found:", search_snippets_left)
-                snippets_dict = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
+                snippets_dict_left = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
                                  search_snippets_left}
                 # Store in session
-                request.session['search_snippets_left'] = snippets_dict
+                request.session['search_snippets_left'] = snippets_dict_left
                 request.session['search_phrase_left'] = search_left
 
         if snippet2 is not None:
@@ -209,6 +216,11 @@ def display_snippets(request):
             snippet2.save()
             search_right = request.POST.get('search_right', '').strip()
             print("Search Term - right:", search_right)
+            if search_right == '':
+                if 'search_snippets_right' in request.session:
+                    del request.session['search_snippets_right']
+                if 'search_phrase_right' in request.session:
+                    del request.session['search_phrase_right']
             if search_right:
                 # We have a search phrase passed for the left image.
                 if update_local_database:
@@ -240,10 +252,10 @@ def display_snippets(request):
 
                 search_snippets_right = Snippet.objects.filter(id__in=snippet_ids)
                 print("Snippets found:", search_snippets_right)
-                snippets_dict = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
+                snippets_dict_right = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
                                  search_snippets_right}
                 # Store in session
-                request.session['search_snippets_right'] = snippets_dict
+                request.session['search_snippets_right'] = snippets_dict_right
                 request.session['search_phrase_right'] = search_right
 
         if user_snippet1 is not None:
@@ -322,8 +334,14 @@ def display_snippets(request):
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
         if snippet2:
+            print('Values before redirect when snippet2 exists:')
+            print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
+                  'stored_snippets:', snippets_dict_left, 'stored_snippets_right:', stored_dict_right)
             redirect_link = f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true'
         else:
+            print('Values before redirect when snippet2 does not exist:')
+            print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
+                  'stored_snippets:', snippets_dict_left, 'stored_snippets_right:', snippets_dict_right)
             return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&edit={edit_mode}&saved=true')
         #f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
@@ -346,6 +364,10 @@ def display_snippets(request):
     prior_segment_place2 = None
     next_segment_frag2 = None
     next_segment_place2 = None
+    prior_segment_frag1 = None
+    prior_segment_place1 = None
+    next_segment_frag1 = None
+    next_segment_place1 = None
     max_place_segment_1 = None
     max_place_segment_2 = None
 
@@ -353,9 +375,10 @@ def display_snippets(request):
         # Previous button logic
         prev_frag1, prev_place1 = frag1, int(place1) - 1
         display_prev1 = True
+        current_frag_index = segment_ids_list.index(int(frag1))
         if prev_place1 < 1:
             # Find the location of this segment in the segment_ids list.
-            current_frag_index = segment_ids_list.index(int(frag1))
+            #current_frag_index = segment_ids_list.index(int(frag1))
             print('snippet1 current_frag_index:',current_frag_index)
             if current_frag_index > 0:
                 # This is not the first segment.
@@ -370,7 +393,7 @@ def display_snippets(request):
         display_next1 = True
         if next_place1 > max_place_segment_1:
             # Find the location of this segment in the segment_ids list.
-            current_frag_index = segment_ids_list.index(int(frag1))
+            #current_frag_index = segment_ids_list.index(int(frag1))
             if current_frag_index < len(segment_ids_list)-1:
                 # This is not the last segment.
                 next_frag1 = segment_ids_list[current_frag_index + 1]
@@ -378,6 +401,14 @@ def display_snippets(request):
             else:
                 # We were already at the first segment.
                 display_next1 = False
+        # If this is not the first segment, then include a prior_segment link for snippet2.
+        if current_frag_index > 0:
+            prior_segment_frag1 = segment_ids_list[current_frag_index - 1]
+            prior_segment_place1 = 1
+        # If this is not the last segment in the list, then show next_segment link
+        if current_frag_index < len(segment_ids_list) - 1:
+            next_segment_frag1 = segment_ids_list[current_frag_index + 1]
+            next_segment_place1 = 1
         if place1 == max_place_segment_1:
             max_place_segment_1 = None
 
@@ -488,8 +519,10 @@ def display_snippets(request):
         'prev_frag2': prev_frag2, 'prev_place2': prev_place2,
         'next_frag1': next_frag1, 'next_place1': next_place1,
         'next_frag2': next_frag2, 'next_place2': next_place2,
-        'prior_segment_frag2': prior_segment_frag2, 'prior_segment_place2': prior_segment_place2,
-        'next_segment_frag2': next_segment_frag2, 'next_segment_place2': next_segment_place2,
+        'prior_segment_frag1': prior_segment_frag1, 'prior_segment_place1': prior_segment_place1,
+        'next_segment_frag1': next_segment_frag1, 'next_segment_place1': next_segment_place1,
+        'prior_segment_frag1': prior_segment_frag1, 'prior_segment_place1': prior_segment_place1,
+        'next_segment_frag1': next_segment_frag1, 'next_segment_place1': next_segment_place1,
         'max_place_segment_1' : max_place_segment_1, 'max_place_segment_2' : max_place_segment_2,
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
