@@ -90,35 +90,37 @@ def display_snippets(request):
     segment_ids_list = list(segment_ids)
     print(segment_ids_list)
 
-    if segment_ids:
-        max_segment = segment_ids_list[-1]
-        min_segment = segment_ids_list[0]
-    else:
-        max_segment = None  # or some default value, or handle the empty list case as needed
-        min_segment = None  # or some default value, or handle the empty list case as needed
+    #if segment_ids:
+    #    max_segment = segment_ids_list[-1]
+    #    min_segment = segment_ids_list[0]
+    #else:
+    #    max_segment = None  # or some default value, or handle the empty list case as needed
+    #    min_segment = None  # or some default value, or handle the empty list case as needed
     # Initialize variable
     search_left = None
     # Check if we have the data in the session
-    snippets_dict_left = request.session.get('search_snippets_left', None)
+    search_dict_left = request.session.get('search_dict_left', None)
     search_phrase_left = request.session.get('search_phrase_left', '')
-    snippets_dict_right = request.session.get('search_snippets_right', None)
+    search_dict_right = request.session.get('search_dict_right', None)
     search_phrase_right = request.session.get('search_phrase_right', '')
     print('Data retrieved from session:')
-    print('search_phrase_left:',search_phrase_left, 'search_phrase_right:',search_phrase_right,'snippets_dict_left:',snippets_dict_left, 'stored_snippets_right:',snippets_dict_right)
+    print('search_phrase_left:',search_phrase_left, 'search_phrase_right:',search_phrase_right,'search_dict_left:',search_dict_left, 'search_dict_right:',search_dict_right)
 
-    if snippets_dict_left:
+    if search_dict_left:
         # Use the stored data
-        search_snippets_left = snippets_dict_left
+        #search_dict_left = search_dict_left
+        pass
     else:
         # Initialize as None or perform the search as needed
-        search_snippets_left = None
+        search_dict_left = None
 
-    if snippets_dict_right:
+    if search_dict_right:
         # Use the stored data
-        search_snippets_right = snippets_dict_right
+        #search_snippets_right = snippets_dict_right
+        pass
     else:
         # Initialize as None or perform the search as needed
-        snippets_dict_right = None
+        search_dict_right = None
 
     # Extract parameters from the request, using default values if not provided
     frag1 = request.GET.get('frag1', min_segment)
@@ -163,8 +165,8 @@ def display_snippets(request):
             search_left = request.POST.get('search_left', '').strip()
             print("Search Term - left:", search_left)
             if search_left == '':
-                if 'search_snippets_left' in request.session:
-                    del request.session['search_snippets_left']
+                if 'search_dict_left' in request.session:
+                    del request.session['search_dict_left']
                 if 'search_phrase_left' in request.session:
                     del request.session['search_phrase_left']
             if search_left:
@@ -197,10 +199,10 @@ def display_snippets(request):
 
                 search_snippets_left = Snippet.objects.filter(id__in=snippet_ids)
                 print("Snippets found:", search_snippets_left)
-                snippets_dict_left = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
+                search_dict_left = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
                                  search_snippets_left}
                 # Store in session
-                request.session['search_snippets_left'] = snippets_dict_left
+                request.session['search_dict_left'] = search_dict_left
                 request.session['search_phrase_left'] = search_left
 
         if snippet2 is not None:
@@ -217,8 +219,8 @@ def display_snippets(request):
             search_right = request.POST.get('search_right', '').strip()
             print("Search Term - right:", search_right)
             if search_right == '':
-                if 'search_snippets_right' in request.session:
-                    del request.session['search_snippets_right']
+                if 'search_dict_right' in request.session:
+                    del request.session['search_dict_right']
                 if 'search_phrase_right' in request.session:
                     del request.session['search_phrase_right']
             if search_right:
@@ -252,10 +254,10 @@ def display_snippets(request):
 
                 search_snippets_right = Snippet.objects.filter(id__in=snippet_ids)
                 print("Snippets found:", search_snippets_right)
-                snippets_dict_right = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
+                search_dict_right = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
                                  search_snippets_right}
                 # Store in session
-                request.session['search_snippets_right'] = snippets_dict_right
+                request.session['search_dict_right'] = search_dict_right
                 request.session['search_phrase_right'] = search_right
 
         if user_snippet1 is not None:
@@ -336,12 +338,12 @@ def display_snippets(request):
         if snippet2:
             print('Values before redirect when snippet2 exists:')
             print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
-                  'stored_snippets:', snippets_dict_left, 'stored_snippets_right:', stored_dict_right)
+                  'search_dict_left:', search_dict_left, 'search_dict_right:', search_dict_right)
             redirect_link = f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true'
         else:
             print('Values before redirect when snippet2 does not exist:')
             print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
-                  'stored_snippets:', snippets_dict_left, 'stored_snippets_right:', snippets_dict_right)
+                  'search_dict_left:', search_dict_left, 'search_dict_right:', search_dict_right)
             return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&edit={edit_mode}&saved=true')
         #f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
@@ -521,8 +523,8 @@ def display_snippets(request):
         'next_frag2': next_frag2, 'next_place2': next_place2,
         'prior_segment_frag1': prior_segment_frag1, 'prior_segment_place1': prior_segment_place1,
         'next_segment_frag1': next_segment_frag1, 'next_segment_place1': next_segment_place1,
-        'prior_segment_frag1': prior_segment_frag1, 'prior_segment_place1': prior_segment_place1,
-        'next_segment_frag1': next_segment_frag1, 'next_segment_place1': next_segment_place1,
+        'prior_segment_frag2': prior_segment_frag2, 'prior_segment_place2': prior_segment_place2,
+        'next_segment_frag2': next_segment_frag2, 'next_segment_place2': next_segment_place2,
         'max_place_segment_1' : max_place_segment_1, 'max_place_segment_2' : max_place_segment_2,
         'summaries': summaries,
         'sentences1': sentences1,'sentences2': sentences2,
@@ -536,7 +538,7 @@ def display_snippets(request):
         'top_time_overlaps_as_second_snippet2': top_time_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
         'show_split_checkbox': show_split_checkbox,
-        'search_snippets_left': search_snippets_left, 'search_snippets_right': search_snippets_right,
+        'search_dict_left': search_dict_left, 'search_dict_right': search_dict_right,
         'search_phrase_left': search_phrase_left, 'search_phrase_right': search_phrase_right,
     }
 

@@ -171,7 +171,7 @@
                     {% if search_snippets_left %}
                         <p>Search Results:</p>
                         <ul>
-                             {% for id, snippet in search_snippets_left.items %}
+                             {% for id, snippet in search_dict_left.items %}
                                 <li>
                                     <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet.segment_id }}&place2={{ snippet.place }}&edit=True">
                                         Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
@@ -188,7 +188,7 @@
                     {% if search_snippets_right %}
                         <p>Search Results:</p>
                         <ul>
-                             {% for id, snippet in search_snippets_right.items %}
+                             {% for id, snippet in search_dict_right.items %}
                                 <li>
                                     <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment_id }}&place1={{ snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">
                                         Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
