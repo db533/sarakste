@@ -122,11 +122,36 @@ def display_snippets(request):
         # Initialize as None or perform the search as needed
         search_dict_right = None
 
-    # Extract parameters from the request, using default values if not provided
-    frag1 = request.GET.get('frag1', min_segment)
-    place1 = request.GET.get('place1', 1)
-    frag2 = request.GET.get('frag2', None)
-    place2 = request.GET.get('place2', None)
+    if request.method == 'POST':
+        # Get navigation parameters from the POST request
+        nav_frag1 = request.POST.get('nav_frag1', '').strip()
+        nav_place1 = request.POST.get('nav_place1', '').strip()
+        nav_frag2 = request.POST.get('nav_frag2', '').strip()
+        nav_place2 = request.POST.get('nav_place2', '').strip()
+
+        # Check if the navigation parameters are provided and valid
+        if nav_frag1.isdigit() and nav_place1.isdigit():
+            # Convert navigation parameters to integers
+            frag1 = int(nav_frag1)
+            place1 = int(nav_place1)
+        else:
+            # Fallback to default or GET parameters if POST data is not valid
+            frag1 = request.GET.get('frag1', min_segment)
+            place1 = request.GET.get('place1', 1)
+        if nav_frag2.isdigit() and nav_place2.isdigit():
+            # Convert navigation parameters to integers
+            frag2 = int(nav_frag2)
+            place2 = int(nav_place2)
+        else:
+            # Fallback to default or GET parameters if POST data is not valid
+            frag2 = request.GET.get('frag1', min_segment)
+            place2 = request.GET.get('place1', 1)
+    else:
+        # Use GET parameters if not a POST request
+        frag1 = request.GET.get('frag1', min_segment)
+        place1 = request.GET.get('place1', 1)
+        frag2 = request.GET.get('frag2', min_segment)
+        place2 = request.GET.get('place2', 1)
     edit_mode = request.GET.get('edit', 'False') == 'True'
 
     # Fetch all existing summaries
