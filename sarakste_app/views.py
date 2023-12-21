@@ -188,7 +188,7 @@ def display_snippets(request):
                 snippet1.summary = selected_summary1
             snippet1.save()
             search_left = request.POST.get('search_left', '').strip()
-            print("Search Term - left:", search_left)
+            print("Search Term - left:", search_left.encode('utf-8'))
             if search_left == '':
                 if 'search_dict_left' in request.session:
                     del request.session['search_dict_left']
