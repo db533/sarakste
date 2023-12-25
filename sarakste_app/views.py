@@ -89,7 +89,7 @@ def validate_segment_and_snippets(validated_segment, position):
     validated_snippets = Snippet.objects.filter(segment=validated_segment)
     for validated_snippet in validated_snippets:
         validated_snippet.validated = True
-        validated_snippet.svae()
+        validated_snippet.save()
 
 @login_required
 def display_snippets(request):
