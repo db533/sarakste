@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as compare_ssim
+import psutil
+import gc
+import math
 
 from django.conf import settings
 # Configure Django settings
@@ -20,7 +23,7 @@ django.setup()
 delete_overlaps = False
 delete_all = False
 update_local_database = False
-
+start_from = 1562
 
 
 import environ
@@ -37,7 +40,7 @@ import socket
 hostname = socket.gethostname()
 IP = socket.gethostbyname(hostname)
 HOSTED = env.bool('HOSTED', default=False)
-print('HOSTED:',HOSTED)
+print('HOSTED:',HOSTED, flush=True)
 if HOSTED:
     if RUN_REMOTE == True:
         host_ip = '212.7.207.88'
@@ -264,14 +267,14 @@ def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_s
                 mse, ssim = cv2_is_match(earlier_segment_np, later_segment_np,later_segment_height)
                 # Now update the records for the 5 best rows.
                 five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, top_five_row, initial_row_matching = update_best_row_records(mse, ssim, top_row, later_segment_height, five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count, initial_row_matching)
-                print('Rows matched:', later_segment.height, 'mse:', mse, 'ssim:',ssim, 'top_five_row:', top_five_row)
-                print('five_best_row:',five_best_row,'mse_for_best_rows:',mse_for_best_rows,'ssim_for_best_rows',ssim_for_best_rows,'best_match_count:',best_match_count)
+                print('Rows matched:', later_segment.height, 'mse:', mse, 'ssim:',ssim, 'top_five_row:', top_five_row, flush=True)
+                print('five_best_row:',five_best_row,'mse_for_best_rows:',mse_for_best_rows,'ssim_for_best_rows',ssim_for_best_rows,'best_match_count:',best_match_count, flush=True)
 
                 if top_five_row == False and len(feasible_rows) > 5 or (ssim > -1 and ssim < 0.7 and len(feasible_rows) > 1):
                     feasible_rows.remove(top_row)
 
                 if len(feasible_rows) == 1:
-                    print('1 feasible row...')
+                    print('1 feasible row...', flush=True)
                     break
 
     #            ssim = 1-ssim # Normalise so that best score is 0. So ssim now ranges from 0 to 2. 2 is worst match.
@@ -325,7 +328,7 @@ def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_s
             mse_for_best_rows = new_mse_for_best_rows
             ssim_for_best_rows = new_ssim_for_best_rows
             if ssim < best_ssim_score:
-                print('ssim starting to fall.')
+                print('ssim starting to fall.', flush=True)
                 feasible_rows.remove(top_row)
 
     best_match_rows = five_best_row[0]
@@ -340,7 +343,7 @@ def find_matching_rows(earlier_image, later_image, best_ssim_score=2, best_mse_s
     #print('best_match_rows:', best_match_rows, 'best_match_score:',best_match_score)
 
     #best_match_rows, best_ssim, best_mse_sequence = find_best_row(five_best_row, mse_for_best_rows, ssim_for_best_rows, best_match_count)
-    print('Best row count:',best_match_rows, 'best_ssim:',best_ssim, 'best_mse_sequence:',best_mse_sequence)
+    print('Best row count:',best_match_rows, 'best_ssim:',best_ssim, 'best_mse_sequence:',best_mse_sequence, flush=True)
 
     best_earlier_segment.show()
     best_later_segment.show()
@@ -647,19 +650,19 @@ def display_image_segments_for_confirmation(img_segment1, img_segment2):
 
 def on_comparison_confirmed():
     # Code to handle what happens after the comparison is confirmed
-    print(f"The image sequence was confirmed as part of the sequence.")
+    print(f"The image sequence was confirmed as part of the sequence.", flush=True)
     global images_in_sequence
     images_in_sequence = True
     awaiting_user_feedback = False
 
 def on_not_in_sequence_confirmed():
-    print("The images are indicated to NOT be in sequence.")
+    print("The images are indicated to NOT be in sequence.", flush=True)
     global images_in_sequence
     images_in_sequence = False
     awaiting_user_feedback = False
 
 def on_show_next():
-    print("Show next comparison images.")
+    print("Show next comparison images.", flush=True)
     global show_next
     show_next = True
     awaiting_user_feedback = False
@@ -700,7 +703,7 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
     """
     Find the matching sequence for the given image and display images being compared.
     """
-    print('Visual comparison with prior sequences...')
+    print('Visual comparison with prior sequences...', flush=True)
     new_image = Image.open(image_path)
     images_in_sequence = False
     #new_image_top = get_image_part(new_image, 'top', strip_height)
@@ -720,7 +723,7 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
             # Display and then check if the new image follows the last image in the sequence
             overlap_height = find_matching_rows(last_image_path, image_path)
             if overlap_height > 3:
-                print(f"The new image follows the sequence {seq_num}.")
+                print(f"The new image follows the sequence {seq_num}.", flush=True)
                 display_images_for_confirmation(last_image_path, image_path, overlap=True,
                                                 confirm_callback=on_comparison_confirmed,
                                                 not_in_sequence_callback=on_not_in_sequence_confirmed,
@@ -729,7 +732,7 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
             # Check if the new image precedes the first image in the sequence
             overlap_height = find_matching_rows(image_path, first_image_path)
             if overlap_height > 3:
-                print(f"The new image precedes the sequence {seq_num}.")
+                print(f"The new image precedes the sequence {seq_num}.", flush=True)
                 display_images_for_confirmation(last_image_path, image_path, overlap=True,
                                                 confirm_callback=on_comparison_confirmed,
                                                 not_in_sequence_callback=on_not_in_sequence_confirmed,
@@ -742,7 +745,7 @@ def find_matching_sequence(image_path, confirmed_sequences, sequence_number, str
         confirmed_sequences[sequence_number].append(image_path)
         pass
 
-    print('The new image was not matched to any existing sequence.')
+    print('The new image was not matched to any existing sequence.', flush=True)
     return None, None
 
 def filter_text_above_threshold(ocr_results, y_threshold, image_height):
@@ -758,7 +761,7 @@ def filter_text_above_threshold(ocr_results, y_threshold, image_height):
 def ocr_image(filename, image_folder):
     filename_with_path = os.path.join(image_folder, filename)
     raw_path = filename_with_path.replace('\\', '\\\\')
-    print('OCR being performed on', filename)
+    print('OCR being performed on', filename, flush=True)
     #img = cv2.imread(raw_path)
     #if img is None:
     #    raise ValueError(f"Unable to open image file: {raw_path}")
@@ -787,14 +790,14 @@ def is_valid_24_hour_time(time_string):
         pattern = r'^\d{1,2}[:.;%@&]\d{1,2}$'
         result = bool(re.match(pattern, time_string))
         if result == True:
-            print('Malformed timestamp seen. Has 2-4 digits separated by some separator... time_string:',time_string)
+            print('Malformed timestamp seen. Has 2-4 digits separated by some separator... time_string:',time_string, flush=True)
             returned_text = ""
 
     if len(time_string) <4:
         #print('= text =: =',time_string,'=')
         pattern = r'^([01]?[0-9]|2[0-3])[:.;80oOB%@&]'
         if bool(re.match(pattern, time_string[:3])):
-            print('3 character timestamp seen...')
+            print('3 character timestamp seen...', flush=True)
             # we probably have a partial time_string.
             returned_text = ""
             result = True
@@ -841,7 +844,7 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
 
     # Loop through each sentence found in the image and create a sentence in the database.
     print_debug = False
-    print('Looping through OCR text to create sentences...')
+    print('Looping through OCR text to create sentences...', flush=True)
     new_setence = False
     sequence = 0
     most_recent_time = None
@@ -853,13 +856,13 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
     weekday_text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Pir', 'Otr', 'Tre', 'Cet', 'Pie', 'Ses', 'Svē']
     for bounding_box, text, confidence in sentence_results:
         if print_debug:
-            print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence)
+            print('bounding_box:',bounding_box,'text:', text, 'confidence:',confidence, flush=True)
         # First check if this looks like a date.
         text, text_as_time = is_valid_24_hour_time(text)
         centerpoint = (bounding_box[0][0] + bounding_box[1][0]) / 2
         week_day_text = text[:3] in weekday_text
         if print_debug:
-            print('centerpoint:',centerpoint)
+            print('centerpoint:',centerpoint, flush=True)
         # Skip text box if it is clearly a label for a speaker's reply.
         if not(text == 'Koris Dainis' or text == 'Dacīte Pence (koris)'):
             if text_as_time == True:
@@ -874,11 +877,11 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
                         result = bool(re.match(pattern, text))
                         if result == False:
                             # The time is not in correct format.
-                            print('Aledgedly this is a time, but it is not formatted correctly. Wiping. Current format:', text,'.')
+                            print('Aledgedly this is a time, but it is not formatted correctly. Wiping. Current format:', text,'.', flush=True)
                             text = ""
 
                     if print_debug:
-                        print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text)
+                        print('Creating sentence with time',text,'. Sentence:',sentence_text, '. Replying to:', replying_to_text, flush=True)
                     most_recent_sentence = Sentence.objects.create(speaker=speaker, text=sentence_text, snippet=new_snippet,
                                                                    sequence=sequence, confidence=min_confidence, reply_to_text=replying_to_text)
                     if text != "":
@@ -902,7 +905,7 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
             elif centerpoint > centerpoint_left and centerpoint < centerpoint_right and week_day_text:
                 # textbox is centered.
                 if print_debug:
-                    print('Appears to be a centred textbox and text starts with day of week text...')
+                    print('Appears to be a centred textbox and text starts with day of week text...', flush=True)
                 day_of_week = read_dow(text)
                 new_snippet.weekday = day_of_week
                 new_snippet.save()
@@ -918,9 +921,9 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
                     else:
                         speaker = "1"
                 if print_debug and speaker == "0":
-                    print('Speaker: Dacīte')
+                    print('Speaker: Dacīte', flush=True)
                 elif print_debug and speaker == "1":
-                    print('Speaker: Dainis')
+                    print('Speaker: Dainis', flush=True)
                 # Set the largest value of x to the that of this textbox as setence seems to be starting.
                 largest_sentence_x = bounding_box[0][0]
                 sentence_text = text
@@ -931,20 +934,20 @@ def add_sentences(new_snippet, sentence_results, image_saved_by):
                 if current_x < largest_sentence_x - reply_offset and replying_to_text == "":
                     # The x for this text box is more to the left, so we have been gathering text for a reply.
                     if print_debug:
-                        print('Previous text seems to be a reply_to text item...')
+                        print('Previous text seems to be a reply_to text item...', flush=True)
                     replying_to_text = sentence_text
                     sentence_text = text
                 else:
                     if print_debug:
-                        print('Continuing current sentence...')
+                        print('Continuing current sentence...', flush=True)
                     sentence_text = sentence_text + ' ' + text
                 if confidence < min_confidence:
                     min_confidence = confidence
             else:
-                print('Text box did not match any expected positions.')
+                print('Text box did not match any expected positions.', flush=True)
         else:
             if print_debug:
-                print('Text matched a speaker label in reply_to text. Skipping.')
+                print('Text matched a speaker label in reply_to text. Skipping.', flush=True)
             else:
                 pass
     # Have completed looping through scanned text.
@@ -1056,11 +1059,11 @@ def is_search_match(search_phrase, search_in, search_results, new_snippet, match
                 # Check if this is a match to the current snippet. If so, disregard.
                 matched_snippet = result['snippet']
                 if matched_snippet == new_snippet:
-                    print('Discarding text match as it is on the same snippet.')
+                    print('Discarding text match as it is on the same snippet.', flush=True)
                 else:
-                    print('\n!!! --- SENTENCE MATCH TO A DIFFERENT SNIPPET --- !!!\n')
+                    print('\n!!! --- SENTENCE MATCH TO A DIFFERENT SNIPPET --- !!!\n', flush=True)
                     endpoint_snippet = is_snippet_at_end_of_segment(result['snippet'])
-                    print('match_length:', match_length, 'endpoint_snippet:', endpoint_snippet)
+                    print('match_length:', match_length, 'endpoint_snippet:', endpoint_snippet, flush=True)
                     if score > best_score and match_length > 1 and endpoint_snippet == True:
                         best_snippet = result['snippet']
                         best_score = score
@@ -1086,11 +1089,11 @@ def is_search_match(search_phrase, search_in, search_results, new_snippet, match
                 # Check if this is a match to the current snippet. If so, disregard.
                 matched_snippet = result['snippet']
                 if matched_snippet == new_snippet:
-                    print('Discarding text match as it is on the same snippet.')
+                    print('Discarding text match as it is on the same snippet.', flush=True)
                 else:
-                    print('\n!!! --- SENTENCE MATCH TO A DIFFERENT SNIPPET --- !!!\n')
+                    print('\n!!! --- SENTENCE MATCH TO A DIFFERENT SNIPPET --- !!!\n', flush=True)
                     endpoint_snippet = is_snippet_at_end_of_segment(result['snippet'])
-                    print('match_length:',match_length,'endpoint_snippet:',endpoint_snippet)
+                    print('match_length:',match_length,'endpoint_snippet:',endpoint_snippet, flush=True)
                     if score > best_score and match_length > 1 and endpoint_snippet == True:
                         best_snippet = result['snippet']
                         best_score = score
@@ -1102,7 +1105,33 @@ def is_search_match(search_phrase, search_in, search_results, new_snippet, match
 
     return best_score, best_snippet
 
+def record_stats(text):
+    # Memory usage in percentage
+    print('Displaying stats.', text)
+    memory_usage_percent = psutil.virtual_memory().percent
+    print(f"Memory usage: {memory_usage_percent}%")
+    # CPU usage percentage
+    cpu_usage_percent = psutil.cpu_percent(interval=1)
+    print(f"CPU usage: {cpu_usage_percent}%")
+    # Disk usage
+    disk_usage = psutil.disk_usage('/')
+    print(f"Disk usage: {disk_usage.percent}%")
+
+    # Network statistics
+    #net_stats = psutil.net_io_counters()
+    #print(f"Bytes sent: {net_stats.bytes_sent}, Bytes received: {net_stats.bytes_recv}")
+
+    # Garbage collector statistics
+    gc_stats = gc.get_stats()
+    print(f"Garbage Collector: {gc_stats}", flush=True)
+
+    # Current process information
+    process = psutil.Process()
+    print(f"Process ID: {process.pid}, Thread Count: {process.num_threads()}, flush=True")
+
 # Main logic
+
+record_stats('Starting script.')
 if delete_all:
     # Delete existing records:
     input('You really want to delete all records? Press Enter to continue.')
@@ -1116,7 +1145,7 @@ if delete_all:
     deletable_instances.delete()
     deletable_instances = Segment.objects.all()
     deletable_instances.delete()
-    print('Deleted all existing records.')
+    print('Deleted all existing records.', flush=True)
 
 elif delete_overlaps == True:
     deletable_instances = SnippetOverlap.objects.all()
@@ -1129,10 +1158,20 @@ elif delete_overlaps == True:
         snippet.segment = new_segment
         snippet.place = 1
         snippet.save()
-    print('Deleted SnippetOverlap records.')
+    print('Deleted SnippetOverlap records.', flush=True)
+
+print('Looking for incomplete snippets...', flush=True)
+incomplete_snippets = Snippet.objects.filter(segment__isnull=True)
+i=0
+for incomplete_snippet in incomplete_snippets:
+    incomplete_sentences = Sentence.objects.filter(snippet=incomplete_snippet)
+    incomplete_sentences.delete()
+    incomplete_snippet.delete()
+    i += 1
+print('Deleted',i,'incompleted Snippets with Sentences.', flush=True)
 
 image_folder = "C:\\Users\\db533\\OneDrive\\Koris\\Dacite-Dainis"
-print('Creating list of images to process')
+print('Creating list of images to process', flush=True)
 #image_files_with_path = [(os.path.join(image_folder, filename), os.path.getmtime(os.path.join(image_folder, filename)))
 #               for filename in os.listdir(image_folder) if filename.endswith(".png")]
 image_files = [(filename)
@@ -1147,20 +1186,21 @@ image_count = len(image_files)
 
 # User interaction loop
 #sequence_number = len(confirmed_sequences) + 1
-i = 0
+i = start_from
 snippet_already_mapped = False
 fulltextserach_threshold = 0.5
+record_stats('About to start looping through images...')
 while i < len(image_files_sorted) :
     if snippet_already_mapped == False:
         # Update the first and last image names for each sequence.
         first_snippet_filenames, last_snippet_filenames = recompute_sequences()
     # Check if the image already is processed as a snippet in the database
     filename = image_files_sorted[i]
-    print('Filename:', filename)
+    print('Filename:', filename, flush=True)
 
     # First check if the snippet has been saved and sentences detected.
     if not Snippet.objects.filter(filename=filename).exists():
-        print('Snippet does not exist.')
+        print('Snippet does not exist.', flush=True)
         new_snippet = Snippet.objects.create(filename=filename)
 
         # Read the text on the image
@@ -1196,7 +1236,7 @@ while i < len(image_files_sorted) :
         sequence_established = False
         for sentence in snippet_sentences:
             reply_text = sentence.reply_to_text
-            print('Fulltext matching the following reply_to_text:', reply_text)
+            print('Fulltext matching the following reply_to_text:', reply_text, flush=True)
             search_results = search(reply_text, 'text')
             if len(search_results) > 0:
 
@@ -1206,10 +1246,10 @@ while i < len(image_files_sorted) :
 
                 if best_score > fulltextserach_threshold:
                     # Found this reply_to_text in the text of another snippet.
-                    print('Found the original place for this reply_text:', reply_text)
+                    print('Found the original place for this reply_text:', reply_text, flush=True)
                     original_segment = best_snippet.segment
                     if best_snippet != new_snippet:
-                        print('Adding snippet to END of segment', original_segment.id)
+                        print('Adding snippet to END of segment', original_segment.id, flush=True)
                         new_snippet.segment = original_segment
                         original_segment_max_place = Snippet.objects.filter(segment_id=original_segment).aggregate(Max('place'))[
                             'place__max']
@@ -1218,7 +1258,7 @@ while i < len(image_files_sorted) :
                         original_segment.length += 1
                         original_segment.save()
                         sequence_established = True
-                        print('Attached image to segment', original_segment.id)
+                        print('Attached image to segment', original_segment.id, flush=True)
                         break
                 # search_results.append({'sentence': sentence, 'snippet': snippet, 'score': relevance_score})
         if sequence_established == False:
@@ -1229,7 +1269,7 @@ while i < len(image_files_sorted) :
             for sentence in snippet_sentences:
                 text = sentence.text
                 # Search for the sentence text in a reply_to_tex.
-                print('Fulltext matching the following sentence text:', text)
+                print('Fulltext matching the following sentence text:', text, flush=True)
                 search_results = search(text, 'reply_to_text')
                 if len(search_results) > 0:
                     # Validate the possible search matches. Are they similar enough.
@@ -1239,11 +1279,11 @@ while i < len(image_files_sorted) :
                     # Check text match is sufficiently strong.
                     if best_score > fulltextserach_threshold:
                         # Found some results.
-                        print('Found a later reply to this original text. text:', text)
+                        print('Found a later reply to this original text. text:', text, flush=True)
                         # Now check that the snippet has not been matched to itself.
                         if best_snippet != new_snippet:
                             original_segment = best_snippet.segment
-                            print('Adding snippet to BEGINNING of segment', original_segment.id)
+                            print('Adding snippet to BEGINNING of segment', original_segment.id, flush=True)
                             existing_snippets = Snippet.objects.filter(segment=original_segment)
                             for existing_snippet in existing_snippets:
                                 existing_snippet.place = existing_snippet.place + 1
@@ -1260,9 +1300,9 @@ while i < len(image_files_sorted) :
             if not SnippetOverlap.objects.filter(first_snippet=new_snippet).exists():
                 # We do not have snippet overlaps defined.
                 # If this is the very first snippet, then this is OK
-                print('Adding SnippetOverlaps for', filename, '...')
+                print('Adding SnippetOverlaps for', filename, '...', flush=True)
                 if i == 0:
-                    print('First snippet. Setting to a segment without looking for overlaps.')
+                    print('First snippet. Setting to a segment without looking for overlaps.', flush=True)
                     if Segment.objects.count() == 0:
                         # No segment exists, so create the first segment.
                         segment_for_snippet = Segment.objects.create(length=1)
@@ -1284,18 +1324,20 @@ while i < len(image_files_sorted) :
                     #other_image_position = []
                     count_matching_overlap_row_count=0
                     # first try to match to the end of existing segments.
-                    print('Comparing to end of',len(last_snippet_filenames),'segments...')
+                    print('Comparing to end of',len(last_snippet_filenames),'segments...', flush=True)
+                    record_stats('About to start start comparing to end of segments...')
                     for last_filename in last_snippet_filenames:
                         assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
                         matching_row_count, ssim_score, mse_score, best_height = find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color, assumed_prior_snippet, new_snippet)
                         #print('Comparing with', last_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                         # Save the overlap to the database.
-                        try:
-                            SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
-                                                          overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
-                        except:
-                            print('Failed to create SnippetOverlap.')
-                            print()
+                        if ssim_score > -1 and not math.isinf(mse_score):
+                            try:
+                                SnippetOverlap.objects.create(first_snippet=assumed_prior_snippet, second_snippet=new_snippet,
+                                                              overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                            except:
+                                print('Failed to create SnippetOverlap.', flush=True)
+                                print(flush=True)
                         if ssim_score > best_ssim_score:
                             #count_matching_overlap_row_count = 1
                             #best_overlap_row_count = matching_row_count
@@ -1307,14 +1349,16 @@ while i < len(image_files_sorted) :
                             other_image_position = 'prior'
                             best_mse_score = mse_score
                     # then try to match to the start of existing segments.
-                    print('Comparing to start of',len(first_snippet_filenames),'segments...')
+                    print('Comparing to start of',len(first_snippet_filenames),'segments...', flush=True)
+                    record_stats('About to start start comparing to beginning of segments...')
                     for first_filename in first_snippet_filenames:
                         assumed_next_snippet = Snippet.objects.get(filename=first_filename)
                         matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color, new_snippet, assumed_next_snippet)
                         #print('Comparing with', first_filename, ' best_height =', best_height, 'ssim_score =', ssim_score, 'mse_score =',mse_score)
                         # Save the overlap to the database.
-                        SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
-                                                      overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
+                        if ssim_score > -1 and not math.isinf(mse_score):
+                            SnippetOverlap.objects.create(first_snippet=new_snippet, second_snippet=assumed_next_snippet,
+                                                          overlaprowcount=best_height, mse_score=mse_score, ssim_score=ssim_score)
                         if ssim_score > best_ssim_score:
                             #count_matching_overlap_row_count = 1
                             #best_overlap_row_count = matching_row_count
@@ -1328,7 +1372,7 @@ while i < len(image_files_sorted) :
                     # One snippet pair has a higher number of matching rows in the images.
                     # update the segment and place values to include the new image in the chosen sequence.
                     if best_ssim_score < 0.7:
-                        print('No good match to existing segments. Creating new segment.')
+                        print('No good match to existing segments. Creating new segment.', flush=True)
                         # Image match is poor reliability. Leave as a standalone segment.
                         #new_snippet = Snippet.objects.create(place=1, filename=filename)     # Move to earlier part of loop
                         new_snippet = start_new_segment(new_snippet)
@@ -1347,7 +1391,7 @@ while i < len(image_files_sorted) :
                         if other_image_position == "prior":
                             # The image that was compared comes before this new image. The new image is at the end of the sequence.
                             # Get the place of the compared image.
-                            print('Adding snippet to END of segment',segment_for_other_snippet.id)
+                            print('Adding snippet to END of segment',segment_for_other_snippet.id, flush=True)
                             last_place = other_snippet.place
                             #new_snippet = Snippet.objects.create(place=int(last_place)+1, segment=segment_for_other_snippet, filename=filename)
                             new_snippet.place = int(last_place)+1
@@ -1357,7 +1401,7 @@ while i < len(image_files_sorted) :
                         else:
                             # The new image needs to be placed before the image that it was compared to.
                             # Get all existing snippets for this segment.
-                            print('Adding snippet to BEGINNING of segment', segment_for_other_snippet.id)
+                            print('Adding snippet to BEGINNING of segment', segment_for_other_snippet.id, flush=True)
                             existing_snippets = Snippet.objects.filter(segment=segment_for_other_snippet)
                             for existing_snippet in existing_snippets:
                                 existing_snippet.place = existing_snippet.place + 1
@@ -1369,7 +1413,7 @@ while i < len(image_files_sorted) :
                             segment_for_other_snippet.save()
                 new_snippet.save()
             else:
-                print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.')
+                print('SnippetOverlaps exist, so not looking for overlaps or change of sequence.', flush=True)
                 snippet_already_mapped = True
                 # Check if time_diff is blank. Might mean that the snippetoverlay is older and needs to have time_diff added.
                 #current_overlaps = SnippetOverlap.objects.filter(first_snippet=new_snippet)
@@ -1380,5 +1424,6 @@ while i < len(image_files_sorted) :
                 #for current_snippetoverlay in current_overlaps:
                 #    if current_snippetoverlay.time_diff is None:
                 #        current_snippetoverlay.save()
-    print('Completed image', (i+1),'of',image_count, '=',int(i*100/image_count),'%')
+    print('Completed image', (i+1),'of',image_count, '=',int(i*100/image_count),'%', flush=True)
+    record_stats('Completed an image.')
     i += 1

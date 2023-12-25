@@ -337,6 +337,9 @@ def display_snippets(request):
                     new_place_counter += 1
             new_segment.length = new_place_counter
             new_segment.save()
+            old_segment = snippet1.segment
+            old_segment.length = last_place_left
+            old_segment.save()
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
 

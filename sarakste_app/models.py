@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, time
 
 class Segment(models.Model):
     length = models.IntegerField(null=True, default=0)
+    validated = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)
@@ -46,7 +47,7 @@ class Snippet(models.Model):
         null=True,
         blank=True
     )
-
+    validated = models.BooleanField(default=False)
 
 class UserSnippet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
