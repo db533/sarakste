@@ -81,6 +81,16 @@ def search(request):
         # Ensure search_results is always passed to the template, even if it's empty
     return render(request, 'search.html', {'form': form, 'search_results': search_results})
 
+
+def validate_segment_and_snippets(validated_segment, position):
+    print('Segment',position,'validated:', validated_segment.id, flush=True)
+    validated_segment.validated = True
+    validated_segment.save()
+    validated_snippets = Snippet.objects.filter(segment=validated_segment)
+    for validated_snippet in validated_snippets:
+        validated_snippet.validated = True
+        validated_snippet.svae()
+
 @login_required
 def display_snippets(request):
 
@@ -333,11 +343,17 @@ def display_snippets(request):
                 if donated_snippet.place > last_place_left:
                     donated_snippet.segment = new_segment
                     donated_snippet.place = new_place_counter
+                    donated_snippet.validated = False
                     donated_snippet.save()
                     new_place_counter += 1
             new_segment.length = new_place_counter
             new_segment.save()
             old_segment = snippet1.segment
+            old_segment.validated = False
+            remaining_snippets = Snippet.objects.filter(segment=old_segment)
+            for remaining_snippet in remaining_snippets:
+                remaining_snippet.validated = False
+                remaining_snippet.save()
             old_segment.length = last_place_left
             old_segment.save()
             return redirect(
@@ -363,6 +379,17 @@ def display_snippets(request):
             place2 = int(place1) + 1
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
+        if 'validate_1' in request.POST:
+            # User has indicated that the snippets in segment on left are in correct sequence.
+            validated_segment = snippet1.segment
+            validate_segment_and_snippets(validated_segment, 'left')
+        if 'validate_2' in request.POST:
+            # User has indicated that the snippets in segment on left are in correct sequence.
+            validated_segment = snippet2.segment
+            validate_segment_and_snippets(validated_segment, 'right')
+
+
+
         if snippet2:
             print('Values before redirect when snippet2 exists:')
             print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
@@ -521,8 +548,9 @@ def display_snippets(request):
         top_time_overlaps_as_second_snippet2 = []
 
     # Check if snippet1's place is the last in its segment and snippet2's place is 1
-    # Check used to detmine if combined field should eb displayed.
+    # Check used to detmine if combined field should be displayed.
     is_last_place_snippet1 = Snippet.objects.filter(segment_id=frag1).aggregate(Max('place'))['place__max'] == int(place1)
+    is_last_place_snippet2 = Snippet.objects.filter(segment_id=frag2).aggregate(Max('place'))['place__max'] == int(place2)
     if snippet2 is not None:
         is_first_place_snippet2 = int(place2) == 1
     else:
@@ -565,6 +593,7 @@ def display_snippets(request):
         'top_time_overlaps_as_first_snippet2': top_time_overlaps_as_first_snippet2,
         'top_time_overlaps_as_second_snippet2': top_time_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
+        'show_validate_1' : is_last_place_snippet1, 'show_validate_2' : is_last_place_snippet2,
         'show_split_checkbox': show_split_checkbox,
         'search_dict_left': search_dict_left, 'search_dict_right': search_dict_right,
         'search_phrase_left': search_phrase_left, 'search_phrase_right': search_phrase_right,
