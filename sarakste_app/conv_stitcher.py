@@ -23,7 +23,7 @@ django.setup()
 delete_overlaps = False
 delete_all = False
 update_local_database = False
-start_from = 1562
+start_from = 1572
 
 
 import environ

@@ -26,18 +26,33 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def generate_segment_links(request):
-    segments = Segment.objects.all().order_by('id')
-    segment_links = []
-    for segment in segments:
-        snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
-        length = segment.length
-        if snippets.exists():
-            url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(segment.id,
-                                                                                           snippets[0].place)
-            if snippets.count() > 1:
-                url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
-            segment_links.append((segment.id, url, length))
-    return render(request, 'segment_list.html', {'segment_links': segment_links})
+    # Separate segments based on validation status
+    validated_segments = Segment.objects.filter(validated=True).order_by('id')
+    unvalidated_segments = Segment.objects.filter(validated=False).order_by('id')
+
+    # Function to create links for a list of segments
+    def create_links(segments):
+        segment_links = []
+        for segment in segments:
+            snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
+            if snippets.exists():
+                url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(
+                    segment.id, snippets[0].place)
+                if snippets.count() > 1:
+                    url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
+                segment_links.append((segment.id, url, segment.length))
+        return segment_links
+
+    # Create links for both lists
+    validated_links = create_links(validated_segments)
+    unvalidated_links = create_links(unvalidated_segments)
+
+    # Pass both lists to the template
+    context = {
+        'validated_links': validated_links,
+        'unvalidated_links': unvalidated_links
+    }
+    return render(request, 'segment_list.html', context)
 
 @login_required
 def search(request):
@@ -364,6 +379,7 @@ def display_snippets(request):
             # Get the segment of the 2nd snippet.
             donating_segment = snippet2.segment
             receiving_segment = snippet1.segment
+            receiving_segment.validated = False
             receiving_segment_max_place = Snippet.objects.filter(segment_id=receiving_segment).aggregate(Max('place'))['place__max']
 
             # Retrieve the snippets that are linked to the Segment in ascending place order.

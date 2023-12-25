@@ -3,9 +3,22 @@
 {% block content %}
 {% load static %}
     <h1>D un D sarakste - segmentu saraksts</h1>
+
+    <h2>Unvalidated Segments</h2>
     <ul>
-        {% for segment_id, link, length in segment_links %}
+        {% for segment_id, link, length in unvalidated_links %}
             <li><a href="{{ link }}">Segment {{ segment_id }} ({{ length }})</a></li>
+        {% empty %}
+            <li>No unvalidated segments.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Validated Segments</h2>
+    <ul>
+        {% for segment_id, link, length in validated_links %}
+            <li><a href="{{ link }}">Segment {{ segment_id }} ({{ length }})</a></li>
+        {% empty %}
+            <li>No validated segments.</li>
         {% endfor %}
     </ul>
 
