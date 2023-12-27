@@ -24,7 +24,7 @@ django.setup()
 delete_overlaps = False
 delete_all = False
 update_local_database = False
-start_from = 2257
+start_from = 2273
 
 
 import environ
@@ -393,7 +393,7 @@ def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_colo
     else:
         # We have imaged of both sizes.
         # Resize the larger image to the smaller image's size.
-        print('Resizing images as they are of different sizes.')
+        #print('Resizing images as they are of different sizes.')
         #Find the larger image.
         if earlier_image.height > 1900:
             # earlier image must be reduced.
