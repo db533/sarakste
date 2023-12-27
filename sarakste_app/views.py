@@ -1,9 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from .models import *
 from django.contrib.auth.decorators import login_required
-from django.db.models import F, Max, Min
+from django.db.models import F, Max, Count, Subquery, OuterRef, Q, Value
+from django.db.models.functions import Concat
+
 from .forms import SearchForm
 from django.db import connection
+
 import environ
 env = environ.Env()
 environ.Env.read_env(overwrite=True)
@@ -26,32 +29,46 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def generate_segment_links(request):
-    # Separate segments based on validation status
-    validated_segments = Segment.objects.filter(validated=True).order_by('id')
-    unvalidated_segments = Segment.objects.filter(validated=False).order_by('id')
+    # Subquery to get a single unvalidated snippet place for each segment
+    unvalidated_snippet_subquery = Subquery(
+        Snippet.objects.filter(segment=OuterRef('pk'), validated=False)
+        .order_by('place')[:1]
+        .values('place')
+    )
 
-    # Function to create links for a list of segments
-    def create_links(segments):
-        segment_links = []
-        for segment in segments:
-            snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
-            if snippets.exists():
-                url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(
-                    segment.id, snippets[0].place)
-                if snippets.count() > 1:
-                    url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
-                segment_links.append((segment.id, url, segment.length))
-        return segment_links
+    # Annotate segments with counts and unvalidated snippet link
+    segments = Segment.objects.annotate(
+        validated_snippets_count=Count('snippet', filter=Q(snippet__validated=True)),
+        unvalidated_snippets_count=Count('snippet', filter=Q(snippet__validated=False)),
+        unvalidated_snippet_place=unvalidated_snippet_subquery
+    ).order_by('id')
 
-    # Create links for both lists
-    validated_links = create_links(validated_segments)
-    unvalidated_links = create_links(unvalidated_segments)
+    # Create data structure for template
+    segment_links = []
+    for segment in segments:
+        snippet_link = None
+        if segment.unvalidated_snippets_count > 0:
+            snippet_place = segment.unvalidated_snippet_place
+            snippet_link = f"https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={segment.id}&place1={snippet_place}"
+        # Prepare url to view all segment.
+        snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
+        length = segment.length
+        if snippets.exists():
+            url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(segment.id,
+                                                                                                     snippets[0].place)
+            if snippets.count() > 1:
+                url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
 
-    # Pass both lists to the template
-    context = {
-        'validated_links': validated_links,
-        'unvalidated_links': unvalidated_links
-    }
+        segment_links.append({
+            'segment_id': segment.id,
+            'validated_snippets_count': segment.validated_snippets_count,
+            'unvalidated_snippets_count': segment.unvalidated_snippets_count,
+            'snippet_link': snippet_link,
+            'segment_link' : url
+        })
+
+    # Pass the data to the template
+    context = {'segment_links': segment_links}
     return render(request, 'segment_list.html', context)
 
 @login_required
@@ -254,6 +271,7 @@ def display_snippets(request):
                 # Store in session
                 request.session['search_dict_left'] = search_dict_left
                 request.session['search_phrase_left'] = search_left
+                request.session.modified = True
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
@@ -309,6 +327,7 @@ def display_snippets(request):
                 # Store in session
                 request.session['search_dict_right'] = search_dict_right
                 request.session['search_phrase_right'] = search_right
+                request.session.modified = True
 
         if user_snippet1 is not None:
             user_snippet1.loved = 'loved1' in request.POST

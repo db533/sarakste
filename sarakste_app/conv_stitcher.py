@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as compare_ssim
+from skimage.transform import resize
 import psutil
 import gc
 import math
@@ -23,7 +24,7 @@ django.setup()
 delete_overlaps = False
 delete_all = False
 update_local_database = False
-start_from = 1572
+start_from = 2257
 
 
 import environ
@@ -379,14 +380,36 @@ def find_matching_rows2(earlier_image, later_image, speaker_color1, speaker_colo
     earlier_image = Image.open(os.path.join(image_folder, earlier_image))
     later_image = Image.open(os.path.join(image_folder, later_image))
 
-    if earlier_image.height < 1335:
+    if earlier_image.height < 1335 and later_image.height < 1335:
+        # Both images are Dainis'
         # Dainis' images = 1334 height
         header_size = 130
         footer_size = 90
-    else:
+    elif earlier_image.height > 1900 and later_image.height > 1900:
+        # Both images are Dacite's
         # Dacite's images = 1920 height
         header_size = 187
         footer_size = 163
+    else:
+        # We have imaged of both sizes.
+        # Resize the larger image to the smaller image's size.
+        print('Resizing images as they are of different sizes.')
+        #Find the larger image.
+        if earlier_image.height > 1900:
+            # earlier image must be reduced.
+            # Specify the new size
+            new_size = (later_image.width, later_image.height)  # Replace 'width' and 'height' with your desired dimensions
+            # Resize the image
+            earlier_image = earlier_image.resize(new_size)
+        else:
+            # later image must be reduced.
+            # Specify the new size
+            new_size = (earlier_image.width, earlier_image.height)  # Replace 'width' and 'height' with your desired dimensions
+            # Resize the image
+            later_image = later_image.resize(new_size)
+        header_size = 130
+        footer_size = 90
+
 
     # Step 1: Identify 5 Best Rows for Potential Match
     five_best_rows, offset = find_five_best_matching_rows(earlier_image, later_image, header_size, footer_size, speaker_color1, speaker_color2, text_color)
@@ -1131,7 +1154,7 @@ def record_stats(text):
 
 # Main logic
 
-record_stats('Starting script.')
+#record_stats('Starting script.')
 if delete_all:
     # Delete existing records:
     input('You really want to delete all records? Press Enter to continue.')
@@ -1189,7 +1212,7 @@ image_count = len(image_files)
 i = start_from
 snippet_already_mapped = False
 fulltextserach_threshold = 0.5
-record_stats('About to start looping through images...')
+#record_stats('About to start looping through images...')
 while i < len(image_files_sorted) :
     if snippet_already_mapped == False:
         # Update the first and last image names for each sequence.
@@ -1325,7 +1348,7 @@ while i < len(image_files_sorted) :
                     count_matching_overlap_row_count=0
                     # first try to match to the end of existing segments.
                     print('Comparing to end of',len(last_snippet_filenames),'segments...', flush=True)
-                    record_stats('About to start start comparing to end of segments...')
+                    #record_stats('About to start start comparing to end of segments...')
                     for last_filename in last_snippet_filenames:
                         assumed_prior_snippet = Snippet.objects.get(filename=last_filename)
                         matching_row_count, ssim_score, mse_score, best_height = find_matching_rows2(last_filename, filename, speaker_color1, speaker_color2, text_color, assumed_prior_snippet, new_snippet)
@@ -1350,7 +1373,7 @@ while i < len(image_files_sorted) :
                             best_mse_score = mse_score
                     # then try to match to the start of existing segments.
                     print('Comparing to start of',len(first_snippet_filenames),'segments...', flush=True)
-                    record_stats('About to start start comparing to beginning of segments...')
+                    #record_stats('About to start start comparing to beginning of segments...')
                     for first_filename in first_snippet_filenames:
                         assumed_next_snippet = Snippet.objects.get(filename=first_filename)
                         matching_row_count, ssim_score, mse_score, best_height =find_matching_rows2(filename, first_filename, speaker_color1, speaker_color2, text_color, new_snippet, assumed_next_snippet)
@@ -1397,6 +1420,7 @@ while i < len(image_files_sorted) :
                             new_snippet.place = int(last_place)+1
                             new_snippet.segment = segment_for_other_snippet
                             segment_for_other_snippet.length += 1
+                            segment_for_other_snippet.validated = False
                             segment_for_other_snippet.save()
                         else:
                             # The new image needs to be placed before the image that it was compared to.
@@ -1410,6 +1434,7 @@ while i < len(image_files_sorted) :
                             new_snippet.place = 1
                             new_snippet.segment = segment_for_other_snippet
                             segment_for_other_snippet.length += 1
+                            segment_for_other_snippet.validated = False
                             segment_for_other_snippet.save()
                 new_snippet.save()
             else:
@@ -1425,5 +1450,5 @@ while i < len(image_files_sorted) :
                 #    if current_snippetoverlay.time_diff is None:
                 #        current_snippetoverlay.save()
     print('Completed image', (i+1),'of',image_count, '=',int(i*100/image_count),'%', flush=True)
-    record_stats('Completed an image.')
+    #record_stats('Completed an image.')
     i += 1

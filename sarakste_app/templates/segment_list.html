@@ -4,21 +4,16 @@
 {% load static %}
     <h1>D un D sarakste - segmentu saraksts</h1>
 
-    <h2>Unvalidated Segments</h2>
     <ul>
-        {% for segment_id, link, length in unvalidated_links %}
-            <li><a href="{{ link }}">Segment {{ segment_id }} ({{ length }})</a></li>
+        {% for segment in segment_links %}
+            <li>
+                <a href="{{ segment.segment_link }}">Segment {{ segment.segment_id }}</a>: Validated Snippets: {{ segment.validated_snippets_count }}, unvalidated Snippets: {{ segment.unvalidated_snippets_count }}
+                    {% if segment.snippet_link %}
+                        <a href="{{ segment.snippet_link }}">Link to an Unvalidated Snippet</a>
+                    {% endif %}
+            </li>
         {% empty %}
-            <li>No unvalidated segments.</li>
-        {% endfor %}
-    </ul>
-
-    <h2>Validated Segments</h2>
-    <ul>
-        {% for segment_id, link, length in validated_links %}
-            <li><a href="{{ link }}">Segment {{ segment_id }} ({{ length }})</a></li>
-        {% empty %}
-            <li>No validated segments.</li>
+            <li>No segments.</li>
         {% endfor %}
     </ul>
 
