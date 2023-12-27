@@ -402,6 +402,15 @@ def display_snippets(request):
         nav_frag2 = request.POST.get('nav_frag2', frag2).strip() or frag2
         nav_place2 = request.POST.get('nav_place2', place2).strip() or place2
 
+        precisedate1 = request.POST.get('precisedate1') or None
+        precisedate2 = request.POST.get('precisedate2') or None
+        #print('precisedate1 from POST:',precisedate1)
+        if precisedate1 is not None:
+            snippet1.precisedate = precisedate1
+        if precisedate2 is not None:
+            snippet2.precisedate = precisedate2
+
+
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
         if snippet1 is not None:
@@ -546,6 +555,7 @@ def display_snippets(request):
             next_segment_place1 = 1
         if place1 == max_place_segment_1:
             max_place_segment_1 = None
+        precisedate1 = snippet1.precisedate
 
     if snippet2 is not None:
         # Previous button logic
@@ -590,7 +600,7 @@ def display_snippets(request):
             next_segment_place2 = 1
         if place2 == max_place_segment_2:
             max_place_segment_2 = None
-
+        precisedate2 = snippet1.precisedate
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
         top_ssim_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
@@ -675,6 +685,7 @@ def display_snippets(request):
         'show_split_checkbox': show_split_checkbox,
         'search_dict_left': search_dict_left, 'search_dict_right': search_dict_right,
         'search_phrase_left': search_phrase_left, 'search_phrase_right': search_phrase_right,
+        'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
     }
 
     #print('Context:',context)

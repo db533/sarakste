@@ -74,7 +74,8 @@
                         {{ snippet1.last_time|date:"H:i" }}
                     {% else %}
                         N/A
-                    {% endif %}</strong>
+                    {% endif %}</strong><br>
+                Precise date: <input type="date" name="precisedate1" placeholder="" size="12" value="{{ precisedate1 }}">
             </td>
             <td>
                 Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong> Snippet id: {{ snippet2.id }}<br>
@@ -89,7 +90,8 @@
                         {{ snippet2.last_time|date:"H:i" }}
                     {% else %}
                         N/A
-                    {% endif %}</strong>
+                    {% endif %}</strong><br>
+                Precise date: <input type="date" name="precisedate2" placeholder="" size="12" value="{{ precisedate2 }}">
             </td>
         </tr>
         <tr>
