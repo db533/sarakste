@@ -48,6 +48,8 @@ class Snippet(models.Model):
         blank=True
     )
     validated = models.BooleanField(default=False)
+    precisedate = models.DateField(default=None, null=True, blank=True, verbose_name = 'Precīzs datums sarakstei', help_text='Precīzs datums sarakstei')
+
 
 class UserSnippet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
