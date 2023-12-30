@@ -143,7 +143,7 @@
         <tr>
             <td>
                 Snippet before this one:<br>
-                <a href="{% url 'display_snippets' %}?frag1={{ snippet1.filename_prior.segment.id }}&place1={{ snippet1.filename_prior.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">Prior filename in {{ snippet1.filename_prior.segment.id }}-{{ snippet1.filename_prior.place }}</a><br>
+                <a href="{% url 'display_snippets' %}?frag1={{ snippet1.filename_prior.segment.id }}&place1={{ snippet1.filename_prior.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">Prior filename in {{ snippet1.filename_prior.segment.id }}-{{ snippet1.filename_prior.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_first_snippet1 %}
                     Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. <u>ssim: {{ overlap.ssim_score }}</u> time diff: {{ overlap.time_diff|date:"H:i" }}<br>
                 {% endfor %}
@@ -152,7 +152,7 @@
                 {% endfor %}
 
                 Snippet after this one:<br>
-                <a href="{% url 'display_snippets' %}?frag1={{ snippet1.filename_next.segment.id }}&place1={{ snippet1.filename_next.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">Next filename in {{ snippet1.filename_next.segment.id }}-{{ snippet1.filename_next.place }}</a><br>
+                <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet1.filename_next.segment.id }}&place2={{ snippet1.filename_next.place }}&edit=True">Next filename in {{ snippet1.filename_next.segment.id }}-{{ snippet1.filename_next.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_second_snippet1 %}
                     Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. <u>ssim: {{ overlap.ssim_score }}</u> time diff: {{ overlap.time_diff|date:"H:i" }}<br>
                 {% endfor %}
@@ -163,7 +163,7 @@
             </td>
             <td>
                 Snippet before this one:<br>
-                <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet2.filename_prior.segment.id }}&place2={{ snippet2.filename_prior.place }}&edit=True">Prior filename in {{ snippet2.filename_prior.segment.id }}-{{ snippet2.filename_prior.place }}</a><br>
+                <a href="{% url 'display_snippets' %}?frag1={{ snippet2.filename_prior.segment.id }}&place1={{ snippet2.filename_prior.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">Prior filename in {{ snippet2.filename_prior.segment.id }}-{{ snippet2.filename_prior.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_first_snippet2 %}
                     Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. <u>ssim: {{ overlap.ssim_score }}</u> time diff: {{ overlap.time_diff|date:"H:i" }}<br>
                 {% endfor %}
@@ -171,7 +171,7 @@
                     Overlapped by <a href="{% url 'display_snippets' %}?frag1={{ overlap.first_snippet.segment.id }}&place1={{ overlap.first_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">{{ overlap.first_snippet.segment.id }}-{{ overlap.first_snippet.place }} ({{ overlap.first_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. ssim: {{ overlap.ssim_score }} <u>time diff: {{ overlap.time_diff|date:"H:i" }}</u><br>
                 {% endfor %}
                 Snippet after this one:<br>
-                <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet2.filename_next.segment.id }}&place2={{ snippet2.filename_next.place }}&edit=True">Next filename in {{ snippet2.filename_next.segment.id }}-{{ snippet2.filename_next.place }}</a><br>
+                <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ snippet2.filename_next.segment.id }}&place2={{ snippet2.filename_next.place }}&edit=True">Next filename in {{ snippet2.filename_next.segment.id }}-{{ snippet2.filename_next.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_second_snippet2 %}
                     Overlaps with <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ overlap.second_snippet.segment.id }}&place2={{ overlap.second_snippet.place }}&edit=True">{{ overlap.second_snippet.segment.id }}-{{ overlap.second_snippet.place }} ({{ overlap.second_snippet.id }})</a>: {{ overlap.overlaprowcount }} rows. <u>ssim: {{ overlap.ssim_score }}</u> time diff: {{ overlap.time_diff|date:"H:i" }}<br>
                 {% endfor %}
