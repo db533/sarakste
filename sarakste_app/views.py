@@ -6,6 +6,7 @@ from django.db.models.functions import Concat
 
 from .forms import SearchForm
 from django.db import connection
+from datetime import date
 
 import environ
 env = environ.Env()
@@ -262,6 +263,10 @@ def display_snippets(request):
             elif selected_summary1_id:
                 selected_summary1 = Summary.objects.get(id=selected_summary1_id)
                 snippet1.summary = selected_summary1
+            precisedate1 = request.POST.get('precisedate1')
+            print('precisedate1 from POST:', precisedate1, flush=True)
+            if precisedate1 != "":
+                snippet1.precisedate = date.fromisoformat(precisedate1)
             snippet1.save()
             search_phrase_left = request.POST.get('search_phrase_left', '').strip()
             print("Search Term - left:", search_phrase_left.encode('utf-8'))
@@ -322,6 +327,10 @@ def display_snippets(request):
             elif selected_summary2_id:
                 selected_summary2 = Summary.objects.get(id=selected_summary2_id)
                 snippet2.summary = selected_summary2
+            precisedate2 =  request.POST.get('precisedate2')
+            print('precisedate2 from POST:',precisedate2)
+            if precisedate2 != "":
+                snippet2.precisedate = date.fromisoformat(precisedate2)
             snippet2.save()
             search_phrase_right = request.POST.get('search_phrase_right', '').strip()
             print("Search Term - right:", search_phrase_right.encode('utf-8'))
@@ -401,15 +410,6 @@ def display_snippets(request):
         nav_place1 = request.POST.get('nav_place1', place1).strip() or place1
         nav_frag2 = request.POST.get('nav_frag2', frag2).strip() or frag2
         nav_place2 = request.POST.get('nav_place2', place2).strip() or place2
-
-        precisedate1 = request.POST.get('precisedate1') or None
-        precisedate2 = request.POST.get('precisedate2') or None
-        #print('precisedate1 from POST:',precisedate1)
-        if precisedate1 is not None:
-            snippet1.precisedate = precisedate1
-        if precisedate2 is not None:
-            snippet2.precisedate = precisedate2
-
 
         # Redirect to the same page to display updated content
         #return redirect('display_snippets')
@@ -514,6 +514,8 @@ def display_snippets(request):
     next_segment_place1 = None
     max_place_segment_1 = None
     max_place_segment_2 = None
+    precisedate1 = None
+    precisedate2 = None
 
     if snippet1 is not None:
         # Previous button logic
@@ -600,7 +602,8 @@ def display_snippets(request):
             next_segment_place2 = 1
         if place2 == max_place_segment_2:
             max_place_segment_2 = None
-        precisedate2 = snippet1.precisedate
+        precisedate2 = snippet2.precisedate
+
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
         top_ssim_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(

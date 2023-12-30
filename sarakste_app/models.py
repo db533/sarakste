@@ -49,6 +49,8 @@ class Snippet(models.Model):
     )
     validated = models.BooleanField(default=False)
     precisedate = models.DateField(default=None, null=True, blank=True, verbose_name = 'Precīzs datums sarakstei', help_text='Precīzs datums sarakstei')
+    filename_prior = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, related_name='prior_filename')
+    filename_next = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, related_name='next_filename')
 
 
 class UserSnippet(models.Model):
