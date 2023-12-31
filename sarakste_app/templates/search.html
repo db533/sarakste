@@ -9,13 +9,21 @@
 {% if search_results %}
     <h2>Search Results</h2>
     <ul>
-        {% for result in search_results %}
-            <li>
-                Relevance Score: {{ result.score }} -
-                Sentence: <a href="{% url 'display_snippets' %}?frag1={{ result.sentence.snippet.segment.id }}&place1={{ result.sentence.snippet.place }}&edit=True">{{ result.sentence.text }}</a> -
-                Snippet: {{ result.snippet.id }}: {{ result.snippet.filename }}
-            </li>
-        {% endfor %}
+        {% if query_type == 'like filename' or query_type == 'first_time match' or query_type == 'last_time match' %}
+            {% for snippet in search_results %}
+                <li>
+                    Snippet: <a href="{% url 'display_snippets' %}?frag1={{ snippet.snippet.segment.id }}&place1={{ snippet.snippet.place }}&edit=True">{{ snippet.snippet.filename }} {{ snippet.snippet.segment.id }} - {{ snippet.snippet.place }}</a>
+                </li>
+            {% endfor %}
+        {% else %}
+            {% for result in search_results %}
+                <li>
+                    Relevance Score: {{ result.score }} -
+                    Sentence: <a href="{% url 'display_snippets' %}?frag1={{ result.sentence.snippet.segment.id }}&place1={{ result.sentence.snippet.place }}&edit=True">{{ result.sentence.text }}</a> -
+                    Snippet: {{ result.snippet.id }}: {{ result.snippet.filename }}
+                </li>
+            {% endfor %}
+        {% endif %}
     </ul>
 {% endif %}
 {% endblock %}

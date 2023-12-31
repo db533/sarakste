@@ -108,11 +108,15 @@ def search(request):
     snippet_table = db_name + '.sarakste_app_snippet'
     print('sentence_table:', sentence_table)
     print('snippet_table:', snippet_table)
+    query_type = ''
 
     if request.GET and form.is_valid():  # Check if the form is valid
         query = form.cleaned_data['query']
         query_like = form.cleaned_data['query_like']
         query_like_reply = form.cleaned_data['query_like_reply']
+        query_like_filename = form.cleaned_data['query_like_filename']
+        query_first_time = form.cleaned_data.get('query_first_time')
+        query_last_time = form.cleaned_data.get('query_last_time')
 
         # Adding logic to decide which results to return.
         if len(query) > 0:
@@ -132,7 +136,7 @@ def search(request):
                 sentence = Sentence.objects.get(id=sentence_id)
                 snippet = Snippet.objects.get(id=snippet_id)
                 search_results.append({'sentence': sentence, 'snippet': snippet, 'score': relevance_score})
-
+            query_type = 'full text'
         elif len(query_like) > 0:
             with connection.cursor() as cursor:
                 sql = f"""
@@ -144,6 +148,7 @@ def search(request):
                 like_query = f"%{query_like}%"
                 cursor.execute(sql, [like_query])
                 results = cursor.fetchall()
+            query_type = 'like text'
         elif len(query_like_reply) > 0:
             with connection.cursor() as cursor:
                 sql = f"""
@@ -155,6 +160,34 @@ def search(request):
                 like_query = f"%{query_like_reply}%"
                 cursor.execute(sql, [like_query])
                 results = cursor.fetchall()
+            query_type = 'like reply_to_text'
+        elif len(query_like_filename) > 0:
+            with connection.cursor() as cursor:
+                sql = f"""
+                          SELECT DISTINCT snip.id
+                          FROM {snippet_table} snip
+                          WHERE snip.filename LIKE %s
+                          """
+                like_query = f"%{query_like_filename}%"
+                cursor.execute(sql, [like_query])
+                results = cursor.fetchall()
+                for snippet_id_tuple in results:
+                    snippet_id = snippet_id_tuple[0]  # Extract the ID from the tuple
+                    snippet = Snippet.objects.get(id=snippet_id)
+                    search_results.append({'snippet': snippet})
+            query_type = 'like filename'
+        elif query_first_time:
+            snippets_with_time = Snippet.objects.filter(first_time=query_first_time)
+            for snippet in snippets_with_time:
+                # Add these snippets to your search results
+                search_results.append({'snippet': snippet})
+            query_type = 'first_time match'
+        elif query_last_time:
+            snippets_with_time = Snippet.objects.filter(last_time=query_last_time)
+            for snippet in snippets_with_time:
+                # Add these snippets to your search results
+                search_results.append({'snippet': snippet})
+            query_type = 'last_time match'
         if len(query_like) > 0 or len(query_like_reply) > 0:
             for row in results:
                 sentence_id, snippet_id = row
@@ -164,7 +197,8 @@ def search(request):
                 search_results.append({'sentence': sentence, 'snippet': snippet, 'score': relevance_score})
 
         # Ensure search_results is always passed to the template, even if it's empty
-    return render(request, 'search.html', {'form': form, 'search_results': search_results})
+
+    return render(request, 'search.html', {'form': form, 'search_results': search_results, 'query_type' : query_type})
 
 
 def validate_segment_and_snippets(validated_segment, position):
