@@ -73,6 +73,24 @@ def generate_segment_links(request):
     return render(request, 'segment_list.html', context)
 
 @login_required
+def display_summaries(request):
+    summaries = Summary.objects.all()
+
+    # Create data structure for template
+    summary_list = []
+    for summary in summaries:
+        snippets_in_summary = Snippet.objects.filter(summary=summary)
+        snippets_in_summary_count = Snippet.objects.filter(summary=summary).count()
+        if snippets_in_summary_count > 0:
+            summary_list.append({'summary' : summary,
+                                 'snippets_in_summary' : snippets_in_summary,
+                                 'snippets_in_summary_count' : snippets_in_summary_count})
+    # Pass the data to the template
+    context = {'summary_list': summary_list}
+    return render(request, 'summary_list.html', context)
+
+
+@login_required
 def search(request):
 
     # SQL command performed to add Full Text index to text field of Sentence model:

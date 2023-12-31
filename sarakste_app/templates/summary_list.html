@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% load static %}
+    <h1>D un D sarakste - tēmu saraksts</h1>
+
+    <ul>
+        {% for summary in summary_list %}
+        <h2>{{summary.summary.title}}</h2>
+            {% for snippet in summary.snippets_in_summary %}
+                <li>
+                    <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment.id }}&place1={{ snippet.place }}&edit=True">Fragments {{ snippet.segment.id }}-{{ snippet.place }}</a>
+                </li>
+            {% endfor %}
+        {% empty %}
+            <li>Nav fragmentu šai tēmai.</li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
