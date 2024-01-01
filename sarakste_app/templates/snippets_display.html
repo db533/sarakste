@@ -62,7 +62,7 @@
         </tr>
         {% if edit_mode %}<tr>
             <td>
-                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong> Snippet id: {{ snippet1.id }}<br>
+                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}<br>
                 Weekday: <strong>{% if snippet1.weekday %}{{ snippet1.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet1.first_time %}
                         {{ snippet1.first_time|date:"H:i" }}
@@ -78,7 +78,7 @@
                 Precise date: <input type="date" name="precisedate1" placeholder="" size="12" value="{{ precisedate1 }}">
             </td>
             <td>
-                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong> Snippet id: {{ snippet2.id }}<br>
+                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong>(of {{ max_place_segment_2 }}) Snippet id: {{ snippet2.id }}<br>
                 Weekday: <strong>{% if snippet2.weekday %}{{ snippet2.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet2.first_time %}
                         {{ snippet2.first_time|date:"H:i" }}
