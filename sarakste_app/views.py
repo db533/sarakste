@@ -210,6 +210,42 @@ def validate_segment_and_snippets(validated_segment, position):
         validated_snippet.validated = True
         validated_snippet.save()
 
+
+def create_new_sentence(snippet, request, new_sentence_speaker, sentence_sequence_field, new_sentence_text_field, reply_to_field, time_field):
+    new_sentence_sequence = request.POST.get(sentence_sequence_field)
+    try:
+        new_sentence_sequence = int(new_sentence_sequence)
+    except:
+        print('new_sentence_sequence must be defined as an integer')
+    max_sequence = Sentence.objects.filter(snippet=snippet).aggregate(Max('sequence'))['sequence__max']
+    #print('max_sequence:', max_sequence)
+    if new_sentence_sequence <= max_sequence:
+        #print('new_sentence_sequence <= max_sequence')
+        moved_sentences = Sentence.objects.filter(snippet=snippet).filter(sequence__gte=new_sentence_sequence)
+        for moved_sentence in moved_sentences:
+            moved_sentence.sequence = moved_sentence.sequence + 1
+            moved_sentence.save()
+    else:
+        #print('Adding sentence as new last sentence.')
+        new_sentence_sequence = max_sequence + 1
+    #print('new_sentence_sequence:', new_sentence_sequence)
+    new_sentence_text = request.POST.get(new_sentence_text_field)
+    new_sentence_reply_to_text = request.POST.get(reply_to_field)
+    new_sentence_time = request.POST.get(time_field)
+    if new_sentence_time != "":
+        Sentence.objects.create(snippet=snippet,
+                                speaker=int(new_sentence_speaker),
+                                text=new_sentence_text,
+                                reply_to_text=new_sentence_reply_to_text,
+                                time=new_sentence_time,
+                                sequence=new_sentence_sequence, )
+    else:
+        Sentence.objects.create(snippet=snippet,
+                                speaker=int(new_sentence_speaker),
+                                text=new_sentence_text,
+                                reply_to_text=new_sentence_reply_to_text,
+                                sequence=new_sentence_sequence, )
+
 @login_required
 def display_snippets(request):
 
@@ -217,7 +253,7 @@ def display_snippets(request):
     segment_ids = Segment.objects.order_by('id').values_list('id', flat=True)
     # Convert the QuerySet to a list (optional, as QuerySets are iterable)
     segment_ids_list = list(segment_ids)
-    print(segment_ids_list)
+    #print(segment_ids_list)
 
     if segment_ids:
         max_segment = segment_ids_list[-1]
@@ -297,6 +333,10 @@ def display_snippets(request):
             if precisedate1 != "":
                 snippet1.precisedate = date.fromisoformat(precisedate1)
             snippet1.save()
+            new_sentence_speaker = request.POST.get('new_sentence_speaker_1', '')
+            print('new_sentence_speaker:',new_sentence_speaker)
+            if new_sentence_speaker == "0" or new_sentence_speaker == "1":
+                create_new_sentence(snippet1, request, new_sentence_speaker, 'new_sentence_sequence_1', 'new_sentence_text_1', 'new_sentence_reply_to_text_1', 'new_sentence_time_1')
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
@@ -313,6 +353,10 @@ def display_snippets(request):
             if precisedate2 != "":
                 snippet2.precisedate = date.fromisoformat(precisedate2)
             snippet2.save()
+            new_sentence_speaker = request.POST.get('new_sentence_speaker_2', '')
+            print('new_sentence_speaker:',new_sentence_speaker)
+            if new_sentence_speaker == "0" or new_sentence_speaker == "1":
+                create_new_sentence(snippet2, request, new_sentence_speaker, 'new_sentence_sequence_2', 'new_sentence_text_2', 'new_sentence_reply_to_text_2', 'new_sentence_time_2')
 
         if user_snippet1 is not None:
             user_snippet1.loved = 'loved1' in request.POST

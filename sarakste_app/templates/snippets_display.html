@@ -186,28 +186,62 @@
             <tr>
                 {% for sentence in sentences_pair %}
                     {% if sentence %}
-                        <td>
+                        <td style="width: 8ch">
                             {% if sentence.speaker == "0" %}Mīļā
-                            {% else %}Mīļais
-                            {% endif %} ({{ sentence.time|date:"H:i" }}):
+                            {% else %}<span style="background-color: #DCF8C6;">Mīļais</span>
+                            {% endif %} ({{ sentence.time|date:"H:i" }}):<br>
                             <input type="checkbox" name="delete_sentence_{{ sentence.id }}" id="delete_sentence_{{ sentence.id }}">
                             <label for="delete_sentence_{{ sentence.id }}">Del</label>
                         </td>
                         <td>
-                            Ziņa:<br><input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
+                            Ziņa ({{ sentence.sequence }}):<br><input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
                             <textarea name="sentence_text_{{ sentence.id }}" cols="35">{{ sentence.text }}</textarea>
                         </td>
                         <td>
                             Atbildot uz tekstu:<br><textarea name="sentence_reply_{{ sentence.id }}" cols="35">{{ sentence.reply_to_text }}</textarea>
                         </td>
                     {% else %}
-                        <td><!-- Empty --></td>
+                        <td style="width: 8ch"><!-- Empty --></td>
                         <td><!-- Empty --></td>
                         <td><!-- Empty --></td>
                     {% endif %}
                 {% endfor %}
             </tr>
         {% endfor %}
+        <tr>
+            {% if snippet1 %}
+                <td style="width: 8ch">
+                    <input type="radio" name="new_sentence_speaker_1" value="1" id="new_sentence_speaker_1_milais">
+                    <label for="new_sentence_speaker_1_milais">Mīļais</label><br>
+                    <input type="radio" name="new_sentence_speaker_1" value="0" id="new_sentence_speaker_1_mila">
+                    <label for="new_sentence_speaker_1_mila">Mīļā</label>
+                    Laiks: <input type="time" name="new_sentence_time_1" step="60">
+                </td>
+                <td>Pievienot ziņu: <input type="number" name="new_sentence_sequence_1" min="0" placeholder="Before seq" size="10"><br><textarea name="new_sentence_text_1" cols="35"></textarea></td>
+                <td>Atbild uz tekstu:<br><textarea name="new_sentence_reply_to_text_1" cols="35"></textarea></td>
+
+            {% else %}
+                <td></td>
+                <td></td>
+                <td></td>
+            {% endif %}
+            {% if snippet2 %}
+                <td style="width: 8ch">
+                    <input type="radio" name="new_sentence_speaker_2" value="1" id="new_sentence_speaker_2_milais">
+                    <label for="new_sentence_speaker_2_milais">Mīļais</label><br>
+                    <input type="radio" name="new_sentence_speaker_2" value="0" id="new_sentence_speaker_2_mila">
+                    <label for="new_sentence_speaker_2_mila">Mīļā</label>
+                    Laiks: <input type="time" name="new_sentence_time_2" step="60">
+                </td>
+                <td>Pievienot ziņu:<input type="number" name="new_sentence_sequence_2" min="0" placeholder="Before seq" size="10"><br><textarea name="new_sentence_text_2" cols="35"></textarea></td>
+                <td>Atbild uz tekstu:<br><textarea name="new_sentence_reply_to_text_2" cols="35"></textarea></td>
+
+            {% else %}
+                <td></td>
+                <td></td>
+                <td></td>
+            {% endif %}
+        </tr>
     {% endif %}
         <tr>
             <!-- Checkboxes for loved field -->
