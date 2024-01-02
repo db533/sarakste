@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filters %}
 
 {% block content %}
 {% load static %}
@@ -9,18 +10,18 @@
     {% endif %}
     <table>
         <tr>
-            <th>Fragments 1: {{ snippet1.filename }}</th>
-            <th>Fragments 2: {{ snippet2.filename }}</th>
+            <th colspan="3">Fragments 1: {{ snippet1.filename }}</th>
+            <th colspan="3">Fragments 2: {{ snippet2.filename }}</th>
         </tr>
         <tr>
-            <td>
+            <td colspan="3">
                 {% if snippet1 %}
                     <img src="{% static snippet1.filename %}" alt="Snippet Image 1" style="width: 50%;">
                 {% else %}
                     Šāds fragments neeksistē.
                 {% endif %}
             </td>
-            <td>
+            <td colspan="3">
                 {% if snippet2 %}
                     <img src="{% static snippet2.filename %}" alt="Snippet Image 2" style="width: 50%;">
                 {% else %}
@@ -28,7 +29,7 @@
                 {% endif %}</td>
         </tr>
         <tr>
-            <td>
+            <td colspan="2">
                 {% if display_scroll_left %}
                     <a href="{% url 'display_snippets' %}?frag1={{ prev_frag1 }}&place1={{ prev_place1 }}&frag2={{ prev_frag2 }}&place2={{ prev_place2 }}&edit={{ edit_mode }}">Iepriekšējā</a>
                 {% endif %}
@@ -36,7 +37,8 @@
                 {% if display_scroll_right %}
                     <a href="{% url 'display_snippets' %}?frag1={{ next_frag1 }}&place1={{ next_place1 }}&frag2={{ next_frag2 }}&place2={{ next_place2 }}&edit={{ edit_mode }}">Nākamā</a>
                 {% endif %}
-
+            </td>
+            <td>
                 {% if show_combine_checkbox %}
                     <input type="checkbox" name="combine" id="combine">
                     <label for="combine">Combine</label>
@@ -47,8 +49,7 @@
                 {% endif %}
 
             </td>
-
-            <td>
+            <td colspan="3">
                 {% if show_split_checkbox %}
                     <input type="checkbox" name="split" id="split">
                     <label for="split">Split segment</label>
@@ -60,8 +61,9 @@
 
             </td>
         </tr>
-        {% if edit_mode %}<tr>
-            <td>
+    {% if edit_mode %}
+        <tr>
+            <td colspan="3">
                 Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}<br>
                 Weekday: <strong>{% if snippet1.weekday %}{{ snippet1.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet1.first_time %}
@@ -77,7 +79,7 @@
                     {% endif %}</strong><br>
                 Precise date: <input type="date" name="precisedate1" placeholder="" size="12" value="{{ precisedate1 }}">
             </td>
-            <td>
+            <td colspan="3">
                 Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong>(of {{ max_place_segment_2 }}) Snippet id: {{ snippet2.id }}<br>
                 Weekday: <strong>{% if snippet2.weekday %}{{ snippet2.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet2.first_time %}
@@ -95,7 +97,7 @@
             </td>
         </tr>
         <tr>
-            <td>
+            <td colspan="3">
                 <!-- Inputs for navigating from snippet1 -->
                 Navigate to:
                 <input type="text" name="nav_frag1" placeholder="Frag" size="3" value="{{ frag1 }}">
@@ -117,7 +119,7 @@
                 {% endif %}
                 <a href="{% url 'display_snippets' %}?frag1={{ frag2 }}&place1={{ place2 }}&frag2={{ frag1 }}&place2={{ place1 }}&edit={{ edit_mode }}"> Swap </a>
             </td>
-            <td>
+            <td colspan="3">
                 <!-- Inputs for navigating from snippet2 -->
                 Navigate to:
                 <input type="text" name="nav_frag2" placeholder="Frag" size="3" value="{{ frag2 }}">
@@ -141,7 +143,7 @@
             </td>
         </tr>
         <tr>
-            <td>
+            <td colspan="3">
                 Snippet before this one:<br>
                 <a href="{% url 'display_snippets' %}?frag1={{ snippet1.filename_prior.segment.id }}&place1={{ snippet1.filename_prior.place }}&frag2={{ frag1 }}&place2={{ place1 }}&edit=True">Prior filename in {{ snippet1.filename_prior.segment.id }}-{{ snippet1.filename_prior.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_first_snippet1 %}
@@ -161,7 +163,7 @@
                 {% endfor %}
 
             </td>
-            <td>
+            <td colspan="3">
                 Snippet before this one:<br>
                 <a href="{% url 'display_snippets' %}?frag1={{ snippet2.filename_prior.segment.id }}&place1={{ snippet2.filename_prior.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">Prior filename in {{ snippet2.filename_prior.segment.id }}-{{ snippet2.filename_prior.place }}</a><br>
                 {% for overlap in top_ssim_overlaps_as_first_snippet2 %}
@@ -180,82 +182,42 @@
                 {% endfor %}
             </td>
         </tr>
-        <tr>
-            <td>
-                Search phrase: <input type="text" name="search_left" size="40" value="{{ search_phrase_left }}"><br>
-                    {% if search_dict_left %}
-                        <p>Search Results:</p>
-                        <ul>
-                             {% for id, snippet in search_dict_left.items %}
-                                <li>
-                                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ snippet.segment_id }}&place2={{ snippet.place }}&edit=True">
-                                        Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No search results found.</p>
-                    {% endif %}
-            </td>
-            <td>
-                Search phrase: <input type="text" name="search_right" size="40" value="{{ search_phrase_right }}"><br>
-                    {% if search_dict_right %}
-                        <p>Search Results:</p>
-                        <ul>
-                             {% for id, snippet in search_dict_right.items %}
-                                <li>
-                                    <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment_id }}&place1={{ snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit=True">
-                                        Snippet ID: {{ id }}, Segment: {{ snippet.segment_id }}, Place: {{ snippet.place }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No search results found.</p>
-                    {% endif %}
-            </td>
-        </tr>
-        {% endif %}
-        <tr>
-            <td>
-                {% if edit_mode %}
-                    {% for sentence in sentences1 %}
-                        {% if sentence.speaker == "0" %}Mīļā
-                        {% else %}Mīļais
-                        {% endif %} ({{ sentence.time|date:"H:i" }}):
+        {% for sentences_pair in sentences1|zip_longest:sentences2 %}
+            <tr>
+                {% for sentence in sentences_pair %}
+                    {% if sentence %}
+                        <td>
+                            {% if sentence.speaker == "0" %}Mīļā
+                            {% else %}Mīļais
+                            {% endif %} ({{ sentence.time|date:"H:i" }}):
                             <input type="checkbox" name="delete_sentence_{{ sentence.id }}" id="delete_sentence_{{ sentence.id }}">
-                            <label for="delete_sentence_{{ sentence.id }}">Delete</label>
-                            <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
-                            <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
-                    {% endfor %}
-                {% else %}
-                {% endif %}
-            </td>
-            <td>
-                {% if edit_mode %}
-                    {% for sentence in sentences2 %}
-                        {% if sentence.speaker == "0" %}Mīļā
-                        {% else %}Mīļais
-                        {% endif %} ({{ sentence.time|date:"H:i" }}):
-                            <input type="checkbox" name="delete_sentence_{{ sentence.id }}" id="delete_sentence_{{ sentence.id }}">
-                            <label for="delete_sentence_{{ sentence.id }}">Delete</label>
-                            <input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
-                            <textarea name="sentence_text_{{ sentence.id }}" cols="70">{{ sentence.text }}</textarea><br>
-                    {% endfor %}
-                {% else %}
-                {% endif %}
-            </td>
-        </tr>
+                            <label for="delete_sentence_{{ sentence.id }}">Del</label>
+                        </td>
+                        <td>
+                            Ziņa:<br><input type="hidden" name="sentence_id_{{ sentence.id }}" value="{{ sentence.id }}">
+                            <textarea name="sentence_text_{{ sentence.id }}" cols="35">{{ sentence.text }}</textarea>
+                        </td>
+                        <td>
+                            Atbildot uz tekstu:<br><textarea name="sentence_reply_{{ sentence.id }}" cols="35">{{ sentence.reply_to_text }}</textarea>
+                        </td>
+                    {% else %}
+                        <td><!-- Empty --></td>
+                        <td><!-- Empty --></td>
+                        <td><!-- Empty --></td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    {% endif %}
         <tr>
             <!-- Checkboxes for loved field -->
-            <td>
+            <td colspan="3">
                 Mīlēts?
                 <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
                 Atzīmēts?
                 <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
             </td>
-            <td>
+            <td colspan="3">
                 Mīlēts?
                 <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
                 Atzīmēts?
@@ -264,7 +226,7 @@
         </tr>
 
         <tr>
-            <td>
+            <td colspan="3">
             <!-- Radio buttons for existing summaries for snippet1 -->
             {% for summary in summaries %}
                 <input type="radio" id="summary1_{{ summary.id }}" name="selected_summary1" value="{{ summary.id }}" {% if snippet1.summary and summary.id == snippet1.summary.id %}checked{% endif %}>
@@ -273,7 +235,7 @@
             <!-- Textarea for new summary for snippet1 -->
             <textarea name="new_summary1" cols="70" placeholder="Jauns apraksts"></textarea>
         </td>
-        <td>
+        <td colspan="3">
             <!-- Radio buttons for existing summaries for snippet2 -->
             {% for summary in summaries %}
                 <input type="radio" id="summary2_{{ summary.id }}" name="selected_summary2" value="{{ summary.id }}" {% if snippet2.summary and summary.id == snippet2.summary.id %}checked{% endif %}>

@@ -227,29 +227,6 @@ def display_snippets(request):
         min_segment = None  # or some default value, or handle the empty list case as needed
     # Initialize variable
     search_left = None
-    # Check if we have the data in the session
-    search_dict_left = request.session.get('search_dict_left', None)
-    search_phrase_left = request.session.get('search_phrase_left', '')
-    search_dict_right = request.session.get('search_dict_right', None)
-    search_phrase_right = request.session.get('search_phrase_right', '')
-    print('Data retrieved from session:')
-    print('search_phrase_left:',search_phrase_left, 'search_phrase_right:',search_phrase_right,'search_dict_left:',search_dict_left, 'search_dict_right:',search_dict_right)
-
-    if search_dict_left:
-        # Use the stored data
-        #search_dict_left = search_dict_left
-        pass
-    else:
-        # Initialize as None or perform the search as needed
-        search_dict_left = None
-
-    if search_dict_right:
-        # Use the stored data
-        #search_snippets_right = snippets_dict_right
-        pass
-    else:
-        # Initialize as None or perform the search as needed
-        search_dict_right = None
 
     if request.method == 'POST':
         # Get navigation parameters from the POST request
@@ -320,54 +297,6 @@ def display_snippets(request):
             if precisedate1 != "":
                 snippet1.precisedate = date.fromisoformat(precisedate1)
             snippet1.save()
-            search_phrase_left = request.POST.get('search_phrase_left', '').strip()
-            print("Search Term - left:", search_phrase_left.encode('utf-8'))
-            if search_phrase_left == '':
-                if 'search_dict_left' in request.session:
-                    del request.session['search_dict_left']
-                if 'search_phrase_left' in request.session:
-                    del request.session['search_phrase_left']
-                search_dict_left = {}
-                # Store in session
-                request.session['search_dict_left'] = search_dict_left
-
-            if len(search_phrase_left) > 0:
-                # We have a search phrase passed for the left image.
-                if update_local_database:
-                    db_name = env.str('MYSQL_LOCAL_DB_NAME')
-                else:
-                    db_name = env.str('MYSQL_PROD_DB_NAME')
-
-                sentence_table = db_name + '.sarakste_app_sentence'
-                snippet_table = db_name + '.sarakste_app_snippet'
-                with connection.cursor() as cursor:
-                    sql = f"""
-                                      SELECT DISTINCT snippet_id 
-                                      FROM {sentence_table}
-                                      INNER JOIN {snippet_table}  
-                                      ON {sentence_table}.snippet_id = {snippet_table}.id
-                                      WHERE MATCH(text) AGAINST (%s IN NATURAL LANGUAGE MODE);
-                                      """
-
-                    # SELECT DISTINCT snippet_id
-                    # FROM sarakste_local.sarakste_app_sentence
-                    # INNER JOIN sarakste_local.sarakste_app_snippet
-                    # ON sarakste_local.sarakste_app_sentence.snippet_id = sarakste_local.sarakste_app_snippet.id
-                    # WHERE MATCH(text) AGAINST ("Esmu klāt" IN NATURAL LANGUAGE MODE);
-
-                    cursor.execute(sql, [search_phrase_left])
-                    snippet_ids = [row[0] for row in cursor.fetchall()]
-                    print("Snippet IDs found:", snippet_ids)
-
-                search_snippets_left = Snippet.objects.filter(id__in=snippet_ids)
-                print("Snippets found:", search_snippets_left)
-                search_dict_left = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
-                                 search_snippets_left}
-                # Store in session
-                request.session['search_dict_left'] = search_dict_left
-                request.session['search_phrase_left'] = search_phrase_left
-                request.session.modified = True
-                # context['search_phrase_left'] = search_left
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
@@ -384,54 +313,6 @@ def display_snippets(request):
             if precisedate2 != "":
                 snippet2.precisedate = date.fromisoformat(precisedate2)
             snippet2.save()
-            search_phrase_right = request.POST.get('search_phrase_right', '').strip()
-            print("Search Term - right:", search_phrase_right.encode('utf-8'))
-            if search_phrase_right == '':
-                if 'search_dict_right' in request.session:
-                    del request.session['search_dict_right']
-                if 'search_phrase_right' in request.session:
-                    del request.session['search_phrase_right']
-                search_dict_right = {}
-                # Store in session
-                request.session['search_dict_right'] = search_dict_right
-
-            if len(search_phrase_right) > 0:
-                # We have a search phrase passed for the left image.
-                if update_local_database:
-                    db_name = env.str('MYSQL_LOCAL_DB_NAME')
-                else:
-                    db_name = env.str('MYSQL_PROD_DB_NAME')
-
-                sentence_table = db_name + '.sarakste_app_sentence'
-                snippet_table = db_name + '.sarakste_app_snippet'
-                with connection.cursor() as cursor:
-                    sql = f"""
-                                      SELECT DISTINCT snippet_id 
-                                      FROM {sentence_table}
-                                      INNER JOIN {snippet_table}  
-                                      ON {sentence_table}.snippet_id = {snippet_table}.id
-                                      WHERE MATCH(text) AGAINST (%s IN NATURAL LANGUAGE MODE);
-                                      """
-
-                    # SELECT DISTINCT snippet_id
-                    # FROM sarakste_local.sarakste_app_sentence
-                    # INNER JOIN sarakste_local.sarakste_app_snippet
-                    # ON sarakste_local.sarakste_app_sentence.snippet_id = sarakste_local.sarakste_app_snippet.id
-                    # WHERE MATCH(text) AGAINST ("Esmu klāt" IN NATURAL LANGUAGE MODE);
-
-                    cursor.execute(sql, [search_phrase_right])
-                    snippet_ids = [row[0] for row in cursor.fetchall()]
-                    print("Snippet IDs found:", snippet_ids)
-
-                search_snippets_right = Snippet.objects.filter(id__in=snippet_ids)
-                print("Snippets found:", search_snippets_right)
-                search_dict_right = {snippet.id: {'segment_id': snippet.segment.id, 'place': snippet.place} for snippet in
-                                 search_snippets_right}
-                # Store in session
-                request.session['search_dict_right'] = search_dict_right
-                request.session['search_phrase_right'] = search_phrase_right
-                request.session.modified = True
-                # context['search_phrase_right'] = search_right
 
         if user_snippet1 is not None:
             user_snippet1.loved = 'loved1' in request.POST
@@ -448,7 +329,9 @@ def display_snippets(request):
             if key.startswith('sentence_id_'):
                 sentence_id = value
                 sentence_text = request.POST.get(f'sentence_text_{sentence_id}', '').strip()
+                sentence_reply = request.POST.get(f'sentence_reply_{sentence_id}', '').strip()
                 Sentence.objects.filter(id=sentence_id).update(text=sentence_text)
+                Sentence.objects.filter(id=sentence_id).update(reply_to_text=sentence_reply)
             if key.startswith('delete_sentence_'):
                 sentence_id = key.split('_')[-1]
                 try:
@@ -526,20 +409,6 @@ def display_snippets(request):
             # User has indicated that the snippets in segment on left are in correct sequence.
             validated_segment = snippet2.segment
             validate_segment_and_snippets(validated_segment, 'right')
-
-
-
-        if snippet2:
-            print('Values before redirect when snippet2 exists:')
-            print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
-                  'search_dict_left:', search_dict_left, 'search_dict_right:', search_dict_right)
-            redirect_link = f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true'
-        else:
-            print('Values before redirect when snippet2 does not exist:')
-            print('search_phrase_left:', search_phrase_left, 'search_phrase_right:', search_phrase_right,
-                  'search_dict_left:', search_dict_left, 'search_dict_right:', search_dict_right)
-            return redirect(f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&edit={edit_mode}&saved=true')
-        #f'/lasit/?frag1={nav_frag1}&place1={nav_place1}&frag2={nav_frag2}&place2={nav_place2}&edit={edit_mode}&saved=true')
 
     # Determine Previous and Next buttons for each snippet.
     display_next1 = False
@@ -738,8 +607,6 @@ def display_snippets(request):
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
         'show_validate_1' : is_last_place_snippet1, 'show_validate_2' : is_last_place_snippet2,
         'show_split_checkbox': show_split_checkbox,
-        'search_dict_left': search_dict_left, 'search_dict_right': search_dict_right,
-        'search_phrase_left': search_phrase_left, 'search_phrase_right': search_phrase_right,
         'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
     }
 
