@@ -182,6 +182,39 @@
                 {% endfor %}
             </td>
         </tr>
+        <tr>
+            <td colspan="3">
+                <!-- Add this section in your template where you want to display the links -->
+                Marked snippets:<br>
+                {% for marked_snippet in marked_snippets %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ marked_snippet.segment_id }}&place1={{ marked_snippet.place }}&frag2={{ frag2 }}&place2={{ place2 }}&edit={{ edit_mode }}">Atzīmēts: {{ marked_snippet.filename }}</a><br>
+                {% endfor %}
+            </td>
+            <td colspan="3">
+                <!-- Add this section in your template where you want to display the links -->
+                Marked snippets:<br>
+                {% for marked_snippet in marked_snippets %}
+                    <a href="{% url 'display_snippets' %}?frag1={{ frag1 }}&place1={{ place1 }}&frag2={{ marked_snippet.segment_id }}&place2={{ marked_snippet.place }}&edit={{ edit_mode }}">Atzīmēts: {{ marked_snippet.filename }}</a><br>
+                {% endfor %}
+            </td>
+        </tr>
+    {% endif %}
+        <tr>
+            <!-- Checkboxes for loved field -->
+            <td colspan="3">
+                Mīlēts?
+                <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
+                Atzīmēts?
+                <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
+            </td>
+            <td colspan="3">
+                Mīlēts?
+                <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
+                Atzīmēts?
+                <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
+            </td>
+        </tr>
+    {% if edit_mode %}
         {% for sentences_pair in sentences1|zip_longest:sentences2 %}
             <tr>
                 {% for sentence in sentences_pair %}
@@ -242,23 +275,8 @@
                 <td></td>
             {% endif %}
         </tr>
-    {% endif %}
-        <tr>
-            <!-- Checkboxes for loved field -->
-            <td colspan="3">
-                Mīlēts?
-                <input type="checkbox" name="loved1" {% if user_snippet1.loved %}checked{% endif %}>
-                Atzīmēts?
-                <input type="checkbox" name="marked1" {% if user_snippet1.marked %}checked{% endif %}>
-            </td>
-            <td colspan="3">
-                Mīlēts?
-                <input type="checkbox" name="loved2" {% if user_snippet2.loved %}checked{% endif %}>
-                Atzīmēts?
-                <input type="checkbox" name="marked2" {% if user_snippet2.marked %}checked{% endif %}>
-            </td>
-        </tr>
 
+    {% endif %}
         <tr>
             <td colspan="3">
             <!-- Radio buttons for existing summaries for snippet1 -->

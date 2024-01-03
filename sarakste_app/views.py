@@ -46,6 +46,7 @@ def generate_segment_links(request):
 
     # Create data structure for template
     segment_links = []
+    total_segments_count = Segment.objects.count()
     for segment in segments:
         snippet_link = None
         if segment.unvalidated_snippets_count > 0:
@@ -65,11 +66,11 @@ def generate_segment_links(request):
             'validated_snippets_count': segment.validated_snippets_count,
             'unvalidated_snippets_count': segment.unvalidated_snippets_count,
             'snippet_link': snippet_link,
-            'segment_link' : url
+            'segment_link' : url,
         })
 
     # Pass the data to the template
-    context = {'segment_links': segment_links}
+    context = {'segment_links': segment_links, 'total_segments_count' : total_segments_count,}
     return render(request, 'segment_list.html', context)
 
 @login_required
@@ -620,6 +621,10 @@ def display_snippets(request):
     else:
         show_split_checkbox = False
 
+    # Adding code to display links to the marked snippets:
+    user_marked_snippets = UserSnippet.objects.filter(user=request.user, marked=True).values_list('snippet', flat=True)
+    marked_snippets = Snippet.objects.filter(id__in=user_marked_snippets)
+
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
         'user_snippet1': user_snippet1,'user_snippet2': user_snippet2,
@@ -652,6 +657,7 @@ def display_snippets(request):
         'show_validate_1' : is_last_place_snippet1, 'show_validate_2' : is_last_place_snippet2,
         'show_split_checkbox': show_split_checkbox,
         'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
+        'marked_snippets' : marked_snippets,
     }
 
     #print('Context:',context)
