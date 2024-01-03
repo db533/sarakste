@@ -4,12 +4,19 @@
 {% load static %}
     <h2>Atzīmēti fragmenti</h2>
     {% if marked_snippets %}
-        <ul>
+        <div style="display: flex; flex-wrap: wrap;">
             {% for snippet in marked_snippets %}
-                <li><a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}"><img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 20%;"></a></li>
-                <!-- Add more snippet details as needed -->
+                <div style="flex: 0 0 25%; box-sizing: border-box; padding: 10px;">
+                    <a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}">
+                        <img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 100%;">
+                    </a>
+                    <!-- Add more snippet details as needed -->
+                </div>
+                {% if forloop.counter|divisibleby:4 %}
+                    <div style="width: 100%;"></div> <!-- Breaks the line every 4 images -->
+                {% endif %}
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
         <p>Neviens fragments nav atzīmēts.</p>
     {% endif %}
