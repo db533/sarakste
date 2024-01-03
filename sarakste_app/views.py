@@ -74,6 +74,32 @@ def generate_segment_links(request):
     return render(request, 'segment_list.html', context)
 
 @login_required
+def delete_snippet(request, snippet_id):
+    snippet = get_object_or_404(Snippet, id=snippet_id)
+    current_segment = snippet.segment
+    place_of_deletable_snippet = snippet.place
+
+    # Loop through all snippets with higher place number and reduce by 1.
+    higher_snippets = Snippet.objects.filter(segment=current_segment).filter(place__gt=place_of_deletable_snippet)
+    for higher_snippet in higher_snippets:
+        higher_snippet.place = higher_snippet.place - 1
+        higher_snippet.save()
+
+    # Check if this is the last snippet in a segment and delete the segment if it is.
+    snippets_in_segment_count = Snippet.objects.filter(segment=current_segment).count()
+    if snippets_in_segment_count == 1:
+        current_segment.delete()
+
+    snippet.delete()
+    # Get the 'next' parameter from the query string
+    next_url = request.GET.get('next', '')  # Default to an empty string if 'next' isn't provided
+    if next_url:
+        return redirect(next_url)
+    else:
+        # Redirect to a default URL if 'next' parameter is not provided
+        return redirect('display_snippets')
+
+@login_required
 def display_summaries(request):
     summaries = Summary.objects.all()
 

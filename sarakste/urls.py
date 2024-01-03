@@ -36,6 +36,7 @@ urlpatterns += [
     path('segments/', generate_segment_links, name='generate_segment_links'),
     path('temas/', display_summaries, name='display_summaries'),
     path('meklet/', search, name='search'),
+    path('delete_snippet/<int:snippet_id>/', delete_snippet, name='delete_snippet'),
 
 ]
 
