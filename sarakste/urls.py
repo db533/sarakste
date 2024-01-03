@@ -37,6 +37,8 @@ urlpatterns += [
     path('temas/', display_summaries, name='display_summaries'),
     path('meklet/', search, name='search'),
     path('delete_snippet/<int:snippet_id>/', delete_snippet, name='delete_snippet'),
+    path('atzimeti/', list_marked_snippets, name='list_marked_snippets'),
+    path('mileti/', list_loved_snippets, name='list_loved_snippets'),
 
 ]
 

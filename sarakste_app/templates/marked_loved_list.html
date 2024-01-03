@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+    <h2>Atzīmēti fragmenti</h2>
+    {% if marked_snippets %}
+        <ul>
+            {% for snippet in marked_snippets %}
+                <li><a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}"><img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 50%;"></a></li>
+                <!-- Add more snippet details as needed -->
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Neviens fragments nav atzīmēts.</p>
+    {% endif %}
+{% endblock %}

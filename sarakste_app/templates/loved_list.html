@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+    <h2>Mīlētie fragmenti</h2>
+    {% if loved_snippets %}
+        <ul>
+            {% for snippet in loved_snippets %}
+                <li><a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}"><img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 50%;"></a></li>
+                <!-- Add more snippet details as needed -->
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Neviens fragments nav atzīmēts kā mīlēts.</p>
+    {% endif %}
+
+{% endblock %}

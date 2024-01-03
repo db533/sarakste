@@ -100,6 +100,36 @@ def delete_snippet(request, snippet_id):
         return redirect('display_snippets')
 
 @login_required
+def list_marked_snippets(request):
+    user = request.user
+    if not user.is_authenticated:
+        # Redirect to login page or show a message if the user is not logged in
+        return redirect('login_view')
+
+    marked_snippets = Snippet.objects.filter(usersnippet__user=user, usersnippet__marked=True)
+
+    context = {
+        'marked_snippets': marked_snippets
+    }
+
+    return render(request, 'marked_loved_list.html', context)
+
+@login_required
+def list_loved_snippets(request):
+    user = request.user
+    if not user.is_authenticated:
+        # Redirect to login page or show a message if the user is not logged in
+        return redirect('login_view')
+
+    loved_snippets = Snippet.objects.filter(usersnippet__user=user, usersnippet__loved=True)
+
+    context = {
+        'loved_snippets': loved_snippets,
+    }
+
+    return render(request, 'loved_list.html', context)
+
+@login_required
 def display_summaries(request):
     summaries = Summary.objects.all()
 
