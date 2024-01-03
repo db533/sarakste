@@ -303,6 +303,33 @@ def create_new_sentence(snippet, request, new_sentence_speaker, sentence_sequenc
                                 reply_to_text=new_sentence_reply_to_text,
                                 sequence=new_sentence_sequence, )
 
+
+def split_segment(current_snippet, split_position):
+    new_segment = Segment.objects.create(length=0)
+    last_place_left = current_snippet.place  # This will be the place value that is last to remain in the orignial segment.
+    if split_position == 'after':
+        last_place_left += 1
+    donatable_snippets = Snippet.objects.filter(segment=current_snippet.segment).order_by('place')
+    new_place_counter = 1
+    for donated_snippet in donatable_snippets:
+        if donated_snippet.place > last_place_left:
+            donated_snippet.segment = new_segment
+            donated_snippet.place = new_place_counter
+            donated_snippet.validated = False
+            donated_snippet.save()
+            new_place_counter += 1
+    new_segment.length = new_place_counter
+    new_segment.save()
+    old_segment = current_snippet.segment
+    old_segment.validated = False
+    remaining_snippets = Snippet.objects.filter(segment=old_segment)
+    for remaining_snippet in remaining_snippets:
+        remaining_snippet.validated = False
+        remaining_snippet.save()
+    old_segment.length = last_place_left
+    old_segment.save()
+
+
 @login_required
 def display_snippets(request):
 
@@ -395,6 +422,14 @@ def display_snippets(request):
             if new_sentence_speaker == "0" or new_sentence_speaker == "1":
                 create_new_sentence(snippet1, request, new_sentence_speaker, 'new_sentence_sequence_1', 'new_sentence_text_1', 'new_sentence_reply_to_text_1', 'new_sentence_time_1')
 
+            # Split the segment if requested
+            split_before_snippet1 = request.GET.get('split_before_snippet1')
+            if split_before_snippet1:
+                split_segment(snippet1, 'before')
+            split_after_snippet1 = request.GET.get('split_after_snippet1')
+            if split_after_snippet1:
+                split_segment(snippet1, 'after')
+
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
             selected_summary2_id = request.POST.get('selected_summary2')
@@ -414,7 +449,13 @@ def display_snippets(request):
             print('new_sentence_speaker:',new_sentence_speaker)
             if new_sentence_speaker == "0" or new_sentence_speaker == "1":
                 create_new_sentence(snippet2, request, new_sentence_speaker, 'new_sentence_sequence_2', 'new_sentence_text_2', 'new_sentence_reply_to_text_2', 'new_sentence_time_2')
-
+            # Split the segment if requested
+            split_before_snippet2 = request.GET.get('split_before_snippet2')
+            if split_before_snippet2:
+                split_segment(snippet2, 'before')
+            split_after_snippet2 = request.GET.get('split_after_snippet2')
+            if split_after_snippet2:
+                split_segment(snippet2, 'after')
         if user_snippet1 is not None:
             user_snippet1.loved = 'loved1' in request.POST
             user_snippet1.marked = 'marked1' in request.POST
@@ -457,27 +498,7 @@ def display_snippets(request):
         if 'split' in request.POST:
             # User has indicated that these 2 snippets are not in sequence and the segment should eb split into 2 segments.
             # Create a new segment.
-            new_segment = Segment.objects.create(length=0)
-            last_place_left = snippet1.place  # This will be the place value that is last to remain in the orignial segment.
-            donatable_snippets = Snippet.objects.filter(segment=snippet1.segment).order_by('place')
-            new_place_counter = 1
-            for donated_snippet in donatable_snippets:
-                if donated_snippet.place > last_place_left:
-                    donated_snippet.segment = new_segment
-                    donated_snippet.place = new_place_counter
-                    donated_snippet.validated = False
-                    donated_snippet.save()
-                    new_place_counter += 1
-            new_segment.length = new_place_counter
-            new_segment.save()
-            old_segment = snippet1.segment
-            old_segment.validated = False
-            remaining_snippets = Snippet.objects.filter(segment=old_segment)
-            for remaining_snippet in remaining_snippets:
-                remaining_snippet.validated = False
-                remaining_snippet.save()
-            old_segment.length = last_place_left
-            old_segment.save()
+            split_segment(snippet1, 'before')
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
 
@@ -538,6 +559,10 @@ def display_snippets(request):
     max_place_segment_2 = None
     precisedate1 = None
     precisedate2 = None
+    display_split_before_1 = False
+    display_split_before_2 = False
+    display_split_after_1 = False
+    display_split_after_2 = False
 
     if snippet1 is not None:
         # Previous button logic
@@ -580,6 +605,10 @@ def display_snippets(request):
         if place1 == max_place_segment_1:
             max_place_segment_1 = None
         precisedate1 = snippet1.precisedate
+        if snippet1.place > 1:
+            display_split_before_1 = True
+        if snippet1.place < max_place_segment_1:
+            display_split_after_1 = True
 
     if snippet2 is not None:
         # Previous button logic
@@ -625,7 +654,10 @@ def display_snippets(request):
         if place2 == max_place_segment_2:
             max_place_segment_2 = None
         precisedate2 = snippet2.precisedate
-
+        if snippet2.place > 1:
+            display_split_before_2 = True
+        if snippet2.place < max_place_segment_2:
+            display_split_after_2 = True
     if snippet1:
         sentences1 = Sentence.objects.filter(snippet=snippet1).order_by('sequence')
         top_ssim_overlaps_as_first_snippet1 = SnippetOverlap.objects.filter(second_snippet=snippet1).order_by(
@@ -714,6 +746,8 @@ def display_snippets(request):
         'show_split_checkbox': show_split_checkbox,
         'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
         'marked_snippets' : marked_snippets,
+        'display_split_after_1' : display_split_after_1, 'display_split_after_2' : display_split_after_2,
+        'display_split_before_1': display_split_before_1, 'display_split_before_2' : display_split_before_2,
     }
 
     #print('Context:',context)
