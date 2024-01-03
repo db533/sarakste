@@ -6,7 +6,7 @@
     {% if marked_snippets %}
         <ul>
             {% for snippet in marked_snippets %}
-                <li><a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}"><img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 50%;"></a></li>
+                <li><a href="{% url 'display_snippets' %}?frag1={{ snippet.segment }}&place1={{ snippet.place }}&edit={{ edit_mode }}"><img src="{% static snippet.filename %}" alt="Snippet Image" style="width: 20%;"></a></li>
                 <!-- Add more snippet details as needed -->
             {% endfor %}
         </ul>
