@@ -4,9 +4,11 @@
 {% load static %}
     <h1>D un D sarakste - segmentu saraksts</h1>
     <h3>Total Segments: {{ total_segments_count }}</h3>
+    <h3>{{ validated_snippet_count }} of {{ total_snippets_count }} snippets validated. ({{ percent_validated }}%)</h3>
 
+    <h2>Segments with Unvalidated Snippets</h2>
     <ul>
-        {% for segment in segment_links %}
+        {% for segment in segments_with_unvalidated %}
             <li>
                 <a href="{{ segment.segment_link }}">Segment {{ segment.segment_id }}</a>: Validated Snippets: {{ segment.validated_snippets_count }}, unvalidated Snippets: {{ segment.unvalidated_snippets_count }}
                     {% if segment.snippet_link %}
@@ -14,7 +16,21 @@
                     {% endif %}
             </li>
         {% empty %}
-            <li>No segments.</li>
+            <li>No segments with unvalidated snippets.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Segments with All Snippets Validated</h2>
+    <ul>
+        {% for segment in segments_all_validated %}
+            <li>
+                <a href="{{ segment.segment_link }}">Segment {{ segment.segment_id }}</a>: Validated Snippets: {{ segment.validated_snippets_count }}, unvalidated Snippets: {{ segment.unvalidated_snippets_count }}
+                    {% if segment.snippet_link %}
+                        <a href="{{ segment.snippet_link }}">Link to an Unvalidated Snippet</a>
+                    {% endif %}
+            </li>
+        {% empty %}
+            <li>All snippets in every segment are validated.</li>
         {% endfor %}
     </ul>
 

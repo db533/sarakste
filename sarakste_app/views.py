@@ -44,9 +44,14 @@ def generate_segment_links(request):
         unvalidated_snippet_place=unvalidated_snippet_subquery
     ).order_by('id')
 
-    # Create data structure for template
-    segment_links = []
+    # Create two separate lists for the template
+    segments_with_unvalidated = []
+    segments_all_validated = []
     total_segments_count = Segment.objects.count()
+    total_snippets_count = Snippet.objects.count()
+    validated_snippet_count = Snippet.objects.filter(validated=1).count()
+    percent_validated = int(validated_snippet_count*100/total_snippets_count)
+
     for segment in segments:
         snippet_link = None
         if segment.unvalidated_snippets_count > 0:
@@ -61,16 +66,24 @@ def generate_segment_links(request):
             if snippets.count() > 1:
                 url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
 
-        segment_links.append({
+        segment_data = {
             'segment_id': segment.id,
             'validated_snippets_count': segment.validated_snippets_count,
             'unvalidated_snippets_count': segment.unvalidated_snippets_count,
             'snippet_link': snippet_link,
-            'segment_link' : url,
-        })
+            'segment_link': url,
+        }
+        # Segregate the segments into two lists
+        if segment.unvalidated_snippets_count > 0:
+            segments_with_unvalidated.append(segment_data)
+        else:
+            segments_all_validated.append(segment_data)
 
     # Pass the data to the template
-    context = {'segment_links': segment_links, 'total_segments_count' : total_segments_count,}
+    context = {
+        'segments_with_unvalidated': segments_with_unvalidated, 'segments_all_validated': segments_all_validated,
+        'total_segments_count' : total_segments_count, 'total_snippets_count' : total_snippets_count,
+        'validated_snippet_count' : validated_snippet_count, 'percent_validated' : percent_validated}
     return render(request, 'segment_list.html', context)
 
 @login_required
