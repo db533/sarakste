@@ -43,18 +43,12 @@
                     <input type="checkbox" name="combine" id="combine">
                     <label for="combine">Combine</label>
                 {% endif %}
-                {% if show_validate_1 %}
-                    <input type="checkbox" name="validate_1" id="validate_1">
-                    <label for="validate_1">Validate segment {{ frag1 }}</label>
-                {% endif %}
-
+                <input type="checkbox" name="validate_1" id="validate_1">
+                <label for="validate_1">Validate {{ place1 }} snippets of segment {{ frag1 }}</label>
             </td>
             <td colspan="3">
-                {% if show_validate_2 %}
-                    <input type="checkbox" name="validate_2" id="validate_2">
-                    <label for="validate_2">Validate segment {{ frag2 }}</label>
-                {% endif %}
-
+                <input type="checkbox" name="validate_2" id="validate_2">
+                <label for="validate_2">Validate {{ place2 }} snippets of segment {{ frag2 }}</label>
             </td>
         </tr>
     {% if edit_mode %}

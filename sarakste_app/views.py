@@ -258,15 +258,18 @@ def search(request):
     return render(request, 'search.html', {'form': form, 'search_results': search_results, 'query_type' : query_type})
 
 
-def validate_segment_and_snippets(validated_segment, position):
+def validate_segment_and_snippets(validated_segment, snippet, position):
     print('Segment',position,'validated:', validated_segment.id, flush=True)
-    validated_segment.validated = True
-    validated_segment.save()
+    last_place = snippet.place
+    max_last_place = Snippet.objects.filter(segment=validated_segment).aggregate(Max('place'))['place__max']
+    if last_place == max_last_place:
+        validated_segment.validated = True
+        validated_segment.save()
     validated_snippets = Snippet.objects.filter(segment=validated_segment)
     for validated_snippet in validated_snippets:
-        validated_snippet.validated = True
-        validated_snippet.save()
-
+        if validated_snippet.place <= last_place:
+            validated_snippet.validated = True
+            validated_snippet.save()
 
 def create_new_sentence(snippet, request, new_sentence_speaker, sentence_sequence_field, new_sentence_text_field, reply_to_field, time_field):
     new_sentence_sequence = request.POST.get(sentence_sequence_field)
@@ -568,13 +571,13 @@ def display_snippets(request):
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag1}&place2={place2}&edit={edit_mode}&saved=true')
         if 'validate_1' in request.POST:
-            # User has indicated that the snippets in segment on left are in correct sequence.
+            # User has indicated that the snippets from place 1 to current place in segment on left are in correct sequence.
             validated_segment = snippet1.segment
-            validate_segment_and_snippets(validated_segment, 'left')
+            validate_segment_and_snippets(validated_segment, snippet1, 'left')
         if 'validate_2' in request.POST:
-            # User has indicated that the snippets in segment on left are in correct sequence.
+            # User has indicated that the snippets from place 1 to current place in segment on right are in correct sequence.
             validated_segment = snippet2.segment
-            validate_segment_and_snippets(validated_segment, 'right')
+            validate_segment_and_snippets(validated_segment, snippet2, 'right')
 
     # Determine Previous and Next buttons for each snippet.
     display_next1 = False
@@ -778,7 +781,6 @@ def display_snippets(request):
         'top_time_overlaps_as_first_snippet2': top_time_overlaps_as_first_snippet2,
         'top_time_overlaps_as_second_snippet2': top_time_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
-        'show_validate_1' : is_last_place_snippet1, 'show_validate_2' : is_last_place_snippet2,
         'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
         'marked_snippets' : marked_snippets,
         'display_split_after_1' : display_split_after_1, 'display_split_after_2' : display_split_after_2,
