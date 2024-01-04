@@ -305,11 +305,15 @@ def create_new_sentence(snippet, request, new_sentence_speaker, sentence_sequenc
 
 
 def split_segment(current_snippet, split_position):
+    print('Splitting segment. split_position:',split_position, flush=True)
     new_segment = Segment.objects.create(length=0)
+    print('new_segment:',new_segment, flush=True)
+    old_segment = current_snippet.segment
     last_place_left = current_snippet.place  # This will be the place value that is last to remain in the orignial segment.
-    if split_position == 'after':
-        last_place_left += 1
-    donatable_snippets = Snippet.objects.filter(segment=current_snippet.segment).order_by('place')
+    if split_position == 'before':
+        last_place_left -= 1
+    print('last_place_left in original segment:', last_place_left, flush=True)
+    donatable_snippets = Snippet.objects.filter(segment=old_segment).order_by('place')
     new_place_counter = 1
     for donated_snippet in donatable_snippets:
         if donated_snippet.place > last_place_left:
@@ -320,7 +324,7 @@ def split_segment(current_snippet, split_position):
             new_place_counter += 1
     new_segment.length = new_place_counter
     new_segment.save()
-    old_segment = current_snippet.segment
+
     old_segment.validated = False
     remaining_snippets = Snippet.objects.filter(segment=old_segment)
     for remaining_snippet in remaining_snippets:
@@ -328,6 +332,7 @@ def split_segment(current_snippet, split_position):
         remaining_snippet.save()
     old_segment.length = last_place_left
     old_segment.save()
+    return new_segment
 
 
 @login_required
@@ -400,6 +405,59 @@ def display_snippets(request):
         snippet2 = None
         user_snippet2 = None
 
+    if snippet1 is not None:
+        # Split the segment if requested
+        #split_before_snippet1 = request.GET.get('split_before_snippet1')
+        print('About to check for split params in GET for snippet1...', flush=True)
+        if 'split_before_snippet1' in request.GET:
+            print('split_before_snippet1 found.', flush=True)
+            new_segment = split_segment(snippet1, 'before')
+            if frag1 == frag2 and int(place2) == int(place1) + 1:
+                return redirect(
+                    f'/lasit/?frag1={new_segment.id}&place1=1&frag2={new_segment.id}&place2=2&edit={edit_mode}&saved=true')
+            else:
+                return redirect(
+                    f'/lasit/?frag1={new_segment.id}&place1=1&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
+        #split_after_snippet1 = request.GET.get('split_after_snippet1')
+        if 'split_after_snippet1' in request.GET:
+            print('split_after_snippet1 found.', flush=True)
+            #old_segment = snippet1.segment
+            #old_segment_length = Snippet.objects.filter(segment=old_segment).aggregate(Max('place'))['place__max']
+            #if place1 == old_segment_length:
+            #    print('Requested to split after the last place in a segment. Ignore.')
+            #else:
+            new_segment = split_segment(snippet1, 'after')
+            if frag1 == frag2 and int(place2) == int(place1)+1:
+                # Snippet 2 was the next snippet in the segment.
+                return redirect(
+                    f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
+            else:
+                return redirect(
+                    f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
+    print('snippet2:',snippet2, flush=True)
+    if snippet2 is not None:
+        # Split the segment if requested
+        #split_before_snippet2 = request.GET.get('split_before_snippet2')
+        print('About to check for split params in GET for snippet2...', flush=True)
+        if 'split_before_snippet2' in request.GET:
+            print('split_before_snippet2 found.', flush=True)
+            new_segment = split_segment(snippet2, 'before')
+            return redirect(
+                f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
+        #split_after_snippet2 = request.GET.get('split_after_snippet2')
+        if 'split_after_snippet2' in request.GET:
+            print('split_after_snippet2 found.', flush=True)
+            new_segment = split_segment(snippet2, 'after')
+            return redirect(
+                f'/lasit/?frag1={frag1}&place1={place1}&frag2={frag2}&place2={place2}&edit={edit_mode}&saved=true')
+    #if 'split_before_snippet2' in request.GET:
+        # User has indicated that these 2 snippets are not in sequence and the segment should eb split into 2 segments.
+    #    print('split_before_snippet2 found regardless of snippet2 state.', flush=True)
+        # Create a new segment.
+    #    new_segment = split_segment(snippet1, 'before')
+    #    return redirect(
+    #        f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
+
     if request.method == 'POST':
         context={}
         if snippet1 is not None:
@@ -422,13 +480,6 @@ def display_snippets(request):
             if new_sentence_speaker == "0" or new_sentence_speaker == "1":
                 create_new_sentence(snippet1, request, new_sentence_speaker, 'new_sentence_sequence_1', 'new_sentence_text_1', 'new_sentence_reply_to_text_1', 'new_sentence_time_1')
 
-            # Split the segment if requested
-            split_before_snippet1 = request.GET.get('split_before_snippet1')
-            if split_before_snippet1:
-                split_segment(snippet1, 'before')
-            split_after_snippet1 = request.GET.get('split_after_snippet1')
-            if split_after_snippet1:
-                split_segment(snippet1, 'after')
 
         if snippet2 is not None:
             snippet2.text = request.POST.get('text2', '')
@@ -449,13 +500,6 @@ def display_snippets(request):
             print('new_sentence_speaker:',new_sentence_speaker)
             if new_sentence_speaker == "0" or new_sentence_speaker == "1":
                 create_new_sentence(snippet2, request, new_sentence_speaker, 'new_sentence_sequence_2', 'new_sentence_text_2', 'new_sentence_reply_to_text_2', 'new_sentence_time_2')
-            # Split the segment if requested
-            split_before_snippet2 = request.GET.get('split_before_snippet2')
-            if split_before_snippet2:
-                split_segment(snippet2, 'before')
-            split_after_snippet2 = request.GET.get('split_after_snippet2')
-            if split_after_snippet2:
-                split_segment(snippet2, 'after')
         if user_snippet1 is not None:
             user_snippet1.loved = 'loved1' in request.POST
             user_snippet1.marked = 'marked1' in request.POST
@@ -498,7 +542,7 @@ def display_snippets(request):
         if 'split' in request.POST:
             # User has indicated that these 2 snippets are not in sequence and the segment should eb split into 2 segments.
             # Create a new segment.
-            split_segment(snippet1, 'before')
+            #new_segment = split_segment(snippet1, 'before')
             return redirect(
                 f'/lasit/?frag1={frag1}&place1={place1}&frag2={new_segment.id}&place2=1&edit={edit_mode}&saved=true')
 
@@ -602,8 +646,8 @@ def display_snippets(request):
         if current_frag_index < len(segment_ids_list) - 1:
             next_segment_frag1 = segment_ids_list[current_frag_index + 1]
             next_segment_place1 = 1
-        if place1 == max_place_segment_1:
-            max_place_segment_1 = None
+        #if place1 == max_place_segment_1:
+        #    max_place_segment_1 = None
         precisedate1 = snippet1.precisedate
         if snippet1.place > 1:
             display_split_before_1 = True
@@ -629,7 +673,7 @@ def display_snippets(request):
             display_scroll_left = True
 
         max_place_segment_2 = Snippet.objects.filter(segment=frag2).aggregate(Max('place'))['place__max']
-        # Next button logic
+            # Next button logic
         next_frag2, next_place2 = frag2, int(place2) + 1
         display_next2 = True
         if next_place2 > max_place_segment_2:
@@ -651,8 +695,8 @@ def display_snippets(request):
         if current_frag_index < len(segment_ids_list) - 1:
             next_segment_frag2 = segment_ids_list[current_frag_index + 1]
             next_segment_place2 = 1
-        if place2 == max_place_segment_2:
-            max_place_segment_2 = None
+        #if place2 == max_place_segment_2:
+        #    max_place_segment_2 = None
         precisedate2 = snippet2.precisedate
         if snippet2.place > 1:
             display_split_before_2 = True
@@ -701,14 +745,6 @@ def display_snippets(request):
     else:
         is_first_place_snippet2 = False
 
-    # Check if snippet1 and 2 are in the same segment and are consequetive place number.
-    # Used to determine if they can be marked for splitting.
-    if snippet1 is not None and snippet2 is not None:
-        show_split_checkbox = (snippet1.segment == snippet2.segment)
-        show_split_checkbox = show_split_checkbox and (snippet2.place - snippet1.place == 1)
-    else:
-        show_split_checkbox = False
-
     # Adding code to display links to the marked snippets:
     user_marked_snippets = UserSnippet.objects.filter(user=request.user, marked=True).values_list('snippet', flat=True)
     marked_snippets = Snippet.objects.filter(id__in=user_marked_snippets)
@@ -743,7 +779,6 @@ def display_snippets(request):
         'top_time_overlaps_as_second_snippet2': top_time_overlaps_as_second_snippet2,
         'show_combine_checkbox': is_last_place_snippet1 and is_first_place_snippet2,
         'show_validate_1' : is_last_place_snippet1, 'show_validate_2' : is_last_place_snippet2,
-        'show_split_checkbox': show_split_checkbox,
         'precisedate1' : precisedate1, 'precisedate2' : precisedate2,
         'marked_snippets' : marked_snippets,
         'display_split_after_1' : display_split_after_1, 'display_split_after_2' : display_split_after_2,
