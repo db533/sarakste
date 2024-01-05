@@ -23,7 +23,7 @@
               <li><a href="{% url 'generate_segment_links' %}">Segmentu saraksts</a></li>
               <li><a href="{% url 'list_loved_snippets' %}">Mīlēti fragmenti</a></li>
               <li><a href="{% url 'list_marked_snippets' %}">Atzīmētie fragmenti</a></li>
-              <li><a href="{% url 'search' %}">Meklēt pēc teksta</a></li>
+              <li><a href="{% url 'search' %}">Meklēt</a></li>
             </p>
             <p><li><strong><a href="{% url 'logout' %}?next={{ request.path }}">Atslēgties</a></strong></li></p>
           {% else %}

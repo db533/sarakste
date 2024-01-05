@@ -54,7 +54,11 @@
     {% if edit_mode %}
         <tr>
             <td colspan="3">
-                Fragmenta vieta: <strong>{{ frag1 }} - {{ place1 }} </strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}<br>
+                Fragmenta vieta: <strong>
+                {% if snippet1.validated %}
+                    <span style="background-color: #DCF8C6;">
+                {% endif %}
+                {{ frag1 }} - {{ place1 }}</strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}<br>
                 Weekday: <strong>{% if snippet1.weekday %}{{ snippet1.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet1.first_time %}
                         {{ snippet1.first_time|date:"H:i" }}
@@ -80,7 +84,11 @@
                 {% endif %}
             </td>
             <td colspan="3">
-                Fragmenta vieta: <strong>{{ frag2 }} - {{ place2 }} </strong>(of {{ max_place_segment_2 }}) Snippet id: {{ snippet2.id }}<br>
+                Fragmenta vieta: <strong>
+                {% if snippet2.validated %}
+                    <span style="background-color: #DCF8C6;">
+                {% endif %}
+                {{ frag2 }} - {{ place2 }} </strong>(of {{ max_place_segment_2 }}) Snippet id: {{ snippet2.id }}<br>
                 Weekday: <strong>{% if snippet2.weekday %}{{ snippet2.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet2.first_time %}
                         {{ snippet2.first_time|date:"H:i" }}
