@@ -335,7 +335,7 @@ def split_segment(current_snippet, split_position):
         if donated_snippet.place > last_place_left:
             donated_snippet.segment = new_segment
             donated_snippet.place = new_place_counter
-            donated_snippet.validated = False
+            #donated_snippet.validated = False
             donated_snippet.save()
             new_place_counter += 1
     new_segment.length = new_place_counter
@@ -343,9 +343,9 @@ def split_segment(current_snippet, split_position):
 
     old_segment.validated = False
     remaining_snippets = Snippet.objects.filter(segment=old_segment)
-    for remaining_snippet in remaining_snippets:
-        remaining_snippet.validated = False
-        remaining_snippet.save()
+    #for remaining_snippet in remaining_snippets:
+    #    remaining_snippet.validated = False
+    #    remaining_snippet.save()
     old_segment.length = last_place_left
     old_segment.save()
     return new_segment
