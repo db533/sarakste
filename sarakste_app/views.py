@@ -272,15 +272,18 @@ def search(request):
 
 
 def validate_segment_and_snippets(validated_segment, snippet, position):
-    print('Segment',position,'validated:', validated_segment.id, flush=True)
+    print('Segment', position, 'validated:', validated_segment.id, flush=True)
     last_place = snippet.place
     max_last_place = Snippet.objects.filter(segment=validated_segment).aggregate(Max('place'))['place__max']
+    #print('last_place:', last_place, 'max_last_place:', max_last_place, flush=True)
     if last_place == max_last_place:
         validated_segment.validated = True
         validated_segment.save()
     validated_snippets = Snippet.objects.filter(segment=validated_segment)
     for validated_snippet in validated_snippets:
+        #print('Checking snippet,',validated_snippet.id,' is place',validated_snippet.place,'<=',last_place)
         if validated_snippet.place <= last_place:
+            #print('It is. :)')
             validated_snippet.validated = True
             validated_snippet.save()
 
@@ -662,6 +665,7 @@ def display_snippets(request):
         if current_frag_index < len(segment_ids_list) - 1:
             next_segment_frag1 = segment_ids_list[current_frag_index + 1]
             next_segment_place1 = 1
+
         #if place1 == max_place_segment_1:
         #    max_place_segment_1 = None
         precisedate1 = snippet1.precisedate
