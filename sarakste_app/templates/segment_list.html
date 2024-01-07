@@ -10,7 +10,13 @@
     <ul>
         {% for segment in segments_with_unvalidated %}
             <li>
-                <a href="{{ segment.segment_link }}">Segment {{ segment.segment_id }}</a>: Validated Snippets: {{ segment.validated_snippets_count }}, unvalidated Snippets: {{ segment.unvalidated_snippets_count }}
+                <a href="{{ segment.segment_link }}">Segment {{ segment.segment_id }}</a>: Validated Snippets: {{ segment.validated_snippets_count }}, unvalidated Snippets: {{ segment.unvalidated_snippets_count }}.
+                    {% if prior_filename_snippet %}
+                        <a href="{% url 'display_snippets' %}?frag1={{ prior_filename_snippet.segment.id }}&place1={{ prior_filename_snippet.place }}&frag2={{ first_snippet.segment.id }}&place2={{ first_snippet.place }}&edit={{ edit_mode }}">Prior segment overlap </a>
+                    {% endif %}
+                    {% if next_filename_snippet %}
+                        <a href="{% url 'display_snippets' %}?frag1={{ last_snippet.segment.id }}&place1={{ last_snippet.place }}&frag2={{ next_filename_snippet.segment.id }}&place2={{ next_filename_snippet.place }}&edit={{ edit_mode }}">Next segment overlap </a>
+                    {% endif %}
                     {% if segment.snippet_link %}
                         <a href="{{ segment.snippet_link }}">Link to an Unvalidated Snippet</a>
                     {% endif %}

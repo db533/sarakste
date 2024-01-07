@@ -13,6 +13,7 @@ env = environ.Env()
 environ.Env.read_env(overwrite=True)
 
 update_local_database = env.bool('update_local_database', default=False)
+HOSTED = env.bool('HOSTED', default=False)
 
 def login_view(request):
     username = request.POST.get('username')
@@ -56,15 +57,44 @@ def generate_segment_links(request):
         snippet_link = None
         if segment.unvalidated_snippets_count > 0:
             snippet_place = segment.unvalidated_snippet_place
-            snippet_link = f"https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={segment.id}&place1={snippet_place}"
+            if HOSTED == True:
+                snippet_link = f"https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={segment.id}&place1={snippet_place}"
+            else:
+                snippet_link = f"http://127.0.0.1:8000/lasit/?edit=True&frag1={segment.id}&place1={snippet_place}"
         # Prepare url to view all segment.
         snippets = Snippet.objects.filter(segment=segment).order_by('place')[:2]
         length = segment.length
         if snippets.exists():
-            url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(segment.id,
-                                                                                                     snippets[0].place)
+            if HOSTED == True:
+                url = "https://sarakste.digitalaisbizness.lv/lasit/?edit=True&frag1={}&place1={}".format(segment.id,snippets[0].place)
+            else:
+                url = "http://127.0.0.1:8000/lasit/?edit=True&frag1={}&place1={}".format(segment.id,snippets[0].place)
             if snippets.count() > 1:
                 url += "&frag2={}&place2={}".format(segment.id, snippets[1].place)
+
+        # Get the snippet that is pointed to as the prior filename from the 1st place Snippet in the segment.
+        try:
+            first_snippet = Snippet.objects.get(segment=segment,place=1)
+        except:
+            first_snippet = None
+        if first_snippet is not None and first_snippet.filename_prior is not None:
+            prior_filename_snippet = first_snippet.filename_prior
+            prior_snippet_overlap = SnippetOverlap.objects.get_or_create(first_snippet=prior_filename_snippet,second_snippet=first_snippet)
+        else:
+            prior_filename_snippet = None
+            prior_snippet_overlap = None
+
+        # Get the snippet that is pointed to as the next filename from the last place Snippet in the segment.
+        try:
+            last_snippet = Snippet.objects.get(segment=segment,place=segment.length)
+        except:
+            last_snippet = None
+        if last_snippet is not None and last_snippet.filename_next is not None:
+            next_filename_snippet = last_snippet.filename_next
+            next_snippet_overlap = SnippetOverlap.objects.get_or_create(first_snippet=last_snippet,second_snippet=next_filename_snippet)
+        else:
+            next_filename_snippet = None
+            next_snippet_overlap = None
 
         segment_data = {
             'segment_id': segment.id,
@@ -72,6 +102,12 @@ def generate_segment_links(request):
             'unvalidated_snippets_count': segment.unvalidated_snippets_count,
             'snippet_link': snippet_link,
             'segment_link': url,
+            'first_snippet' : first_snippet,
+            'last_snippet' : last_snippet,
+            'prior_filename_snippet' : prior_filename_snippet,
+            'next_filename_snippet' : next_filename_snippet,
+            'prior_snippet_overlap' : prior_snippet_overlap,
+            'next_snippet_overlap' : next_snippet_overlap,
         }
         # Segregate the segments into two lists
         if segment.unvalidated_snippets_count > 0:

@@ -99,6 +99,7 @@ class SnippetOverlap(models.Model):
     mse_score = models.DecimalField(max_digits=10, decimal_places=1, null=True)
     ssim_score = models.DecimalField(max_digits=6, decimal_places=4, null=True)
     time_diff = models.TimeField(help_text=('Laiks atšķirība'),null=True,blank=True)
+    checked = models.BooleanField(default=False)
 
     def compute_time_diff(self):
         # Check if either time is None
