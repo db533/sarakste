@@ -58,7 +58,9 @@
                 {% if snippet1.validated %}
                     <span style="background-color: #DCF8C6;">
                 {% endif %}
-                {{ frag1 }} - {{ place1 }}</strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}<br>
+                {{ frag1 }} - {{ place1 }}</strong>(of {{ max_place_segment_1 }}) Snippet id: {{ snippet1.id }}
+                <input type="checkbox" name="this_overlap_checked" id="this_overlap_checked"  {% if overlap.checked %}checked{% endif %}>
+                <label for="this_overlap_checked">This overlap checked</label f><br>
                 Weekday: <strong>{% if snippet1.weekday %}{{ snippet1.get_weekday_display }}{% else %}N/A{% endif %}</strong> Earliest time:
                     <strong>{% if snippet1.first_time %}
                         {{ snippet1.first_time|date:"H:i" }}

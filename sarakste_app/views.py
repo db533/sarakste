@@ -79,7 +79,7 @@ def generate_segment_links(request):
             first_snippet = None
         if first_snippet is not None and first_snippet.filename_prior is not None:
             prior_filename_snippet = first_snippet.filename_prior
-            prior_snippet_overlap = SnippetOverlap.objects.get_or_create(first_snippet=prior_filename_snippet,second_snippet=first_snippet)
+            prior_snippet_overlap, created = SnippetOverlap.objects.get_or_create(first_snippet=prior_filename_snippet,second_snippet=first_snippet)
         else:
             prior_filename_snippet = None
             prior_snippet_overlap = None
@@ -91,7 +91,7 @@ def generate_segment_links(request):
             last_snippet = None
         if last_snippet is not None and last_snippet.filename_next is not None:
             next_filename_snippet = last_snippet.filename_next
-            next_snippet_overlap = SnippetOverlap.objects.get_or_create(first_snippet=last_snippet,second_snippet=next_filename_snippet)
+            next_snippet_overlap, created = SnippetOverlap.objects.get_or_create(first_snippet=last_snippet,second_snippet=next_filename_snippet)
         else:
             next_filename_snippet = None
             next_snippet_overlap = None
@@ -630,6 +630,10 @@ def display_snippets(request):
             # User has indicated that the snippets from place 1 to current place in segment on right are in correct sequence.
             validated_segment = snippet2.segment
             validate_segment_and_snippets(validated_segment, snippet2, 'right')
+        if 'this_overlap_checked' in request.POST:
+            overlap = SnippetOverlap.objects.get(first_snippet=snippet1, second_snippet=snippet2)
+            overlap.checked=True
+            overlap.save()
 
     # Determine Previous and Next buttons for each snippet.
     display_next1 = False
@@ -804,6 +808,10 @@ def display_snippets(request):
     # Adding code to display links to the marked snippets:
     user_marked_snippets = UserSnippet.objects.filter(user=request.user, marked=True).values_list('snippet', flat=True)
     marked_snippets = Snippet.objects.filter(id__in=user_marked_snippets)
+    if snippet1 and snippet2:
+        overlap, created  = SnippetOverlap.objects.get_or_create(first_snippet=snippet1, second_snippet=snippet2)
+    else:
+        overlap = None
 
     context = {
         'snippet1': snippet1,'snippet2': snippet2,
@@ -838,6 +846,7 @@ def display_snippets(request):
         'marked_snippets' : marked_snippets,
         'display_split_after_1' : display_split_after_1, 'display_split_after_2' : display_split_after_2,
         'display_split_before_1': display_split_before_1, 'display_split_before_2' : display_split_before_2,
+        'overlap' : overlap,
     }
 
     #print('Context:',context)
